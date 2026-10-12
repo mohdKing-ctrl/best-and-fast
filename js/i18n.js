@@ -26,12 +26,14 @@
   add('pg_settings', 'Settings', 'الإعدادات');
   add('pg_settings_s', 'Business details, workers, backup and subscription', 'بيانات الورشة والموظفون والنسخ الاحتياطي والاشتراك');
   add('brand_sub', 'Garage POS', 'نظام إدارة الورشة');
-  add('app_title', 'Point of Sale', 'نظام نقاط البيع');
+  add('app_title', 'Point of Sale - Demo', 'نظام نقاط البيع - نسخة تجريبية');
   add('dark_mode', 'Dark mode', 'الوضع الليلي');
   add('light_mode', 'Light mode', 'الوضع النهاري');
   add('sign_out', 'Sign out', 'تسجيل الخروج');
   add('signed_in_as', 'Signed in as', 'مسجّل الدخول باسم');
-  add('demo_banner', 'NOT CONNECTED TO THE SERVER - data stays in this browser only', 'غير متصل بالسيرفر - البيانات تُحفظ في هذا المتصفح فقط');
+  add('demo_banner', 'DEMO - everything you do stays in this browser only. Nothing is sent anywhere.', 'نسخة تجريبية - كل ما تفعله يبقى في هذا المتصفح فقط ولا يُرسل إلى أي مكان.');
+  add('demo_reset', 'Reset demo', 'إعادة ضبط العرض');
+  add('demo_reset_confirm', 'Delete everything you added and load the example data again?', 'حذف كل ما أضفته وإعادة تحميل البيانات التجريبية؟');
   add('loading', 'Loading...', 'جارٍ التحميل...');
 
   /* ---------- example data ---------- */
@@ -307,8 +309,8 @@
   add('st_storage', 'Where your data is stored', 'أين تُحفظ بياناتك');
   add('mode_server', 'Server storage', 'تخزين على السيرفر');
   add('mode_server_s', 'Everything is saved on your hosting server and is shared by every device that signs in.', 'كل شيء يُحفظ على سيرفر الاستضافة ويتشارك فيه كل جهاز يسجّل الدخول.');
-  add('mode_demo', 'Not connected to the server', 'غير متصل بالسيرفر');
-  add('mode_demo_s', 'The server program was not found, so data is saved in this browser only. Open the website address on the hosting to save on the server.', 'لم يتم العثور على برنامج السيرفر، لذلك تُحفظ البيانات في هذا المتصفح فقط. افتح عنوان الموقع على الاستضافة للحفظ على السيرفر.');
+  add('mode_demo', 'Demo mode', 'نسخة تجريبية');
+  add('mode_demo_s', 'This is a demo: everything is saved only in this browser. Press "Reset demo" in the menu to start again.', 'هذه نسخة تجريبية: كل شيء يُحفظ في هذا المتصفح فقط. اضغط "إعادة ضبط العرض" في القائمة للبدء من جديد.');
   add('st_business', 'Garage & invoice details', 'بيانات الورشة والفاتورة');
   add('st_name_en', 'Business name (English)', 'اسم الورشة (إنجليزي)');
   add('st_name_ar', 'Business name (Arabic)', 'اسم الورشة (عربي)');

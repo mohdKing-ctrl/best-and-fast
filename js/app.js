@@ -4,7 +4,7 @@
 
   var current = 'new';
   var inited = false;
-  var PREF_KEY = 'bf_pos_pref';
+  var PREF_KEY = 'bf_pos_demo_pref';
   var VIEWS = ['new', 'invoices', 'customers', 'services', 'reports', 'settings'];
   var ADMIN_ONLY = { services: 1, reports: 1 };
 

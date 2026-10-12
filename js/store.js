@@ -10,7 +10,7 @@
   'use strict';
 
   var API = 'api/index.php';
-  var LS_KEY = 'bf_pos_best-and-fast_db';
+  var LS_KEY = 'bf_pos_demo_db_v1';
 
   var S = {
     mode: 'local',            // 'server' | 'local'
@@ -146,6 +146,13 @@
   /* ------------------------------------------------ boot / auth */
   /* Resolves to 'ready' | 'login' | 'setup'.  Falls back to browser-only storage when the API is not there. */
   function boot() {
+    // DEMO BUILD: there is no server - everything lives in this browser
+    S.mode = 'local';
+    S.user = { id: 0, username: 'demo', name: 'Demo', role: 'admin' };
+    localLoad();
+    return Promise.resolve('ready');
+  }
+  function bootWithServer() {
     return call('status').then(function (st) {
       S.mode = 'server';
       if (st.setup_needed) return 'setup';
