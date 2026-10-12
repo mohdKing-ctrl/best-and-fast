@@ -128,10 +128,11 @@
   add('send_whatsapp', 'Send on WhatsApp', 'إرسال بالواتساب');
   add('wa_title', 'Send the bill on WhatsApp', 'إرسال الفاتورة بالواتساب');
   add('wa_phone', 'Customer WhatsApp number', 'رقم واتساب العميل');
-  add('wa_phone_hint', 'Oman: 8 digits (9xxx xxxx). Another country: start with + and the country code. Leave it empty to choose the person inside WhatsApp.', 'عُمان: ٨ أرقام (9xxx xxxx). دولة أخرى: ابدأ بـ + ثم رمز الدولة. اتركه فارغاً لتختار الشخص من داخل واتساب.');
+  add('wa_phone_hint', 'Oman: 8 digits (9xxx xxxx). Another country: start with + and the country code. Leave it empty to choose the person inside WhatsApp. If the first button does not open, use the WhatsApp Web button.', 'عُمان: ٨ أرقام (9xxx xxxx). دولة أخرى: ابدأ بـ + ثم رمز الدولة. اتركه فارغاً لتختار الشخص من داخل واتساب. وإن لم يفتح الزر الأول استخدم زر واتساب ويب.');
   add('wa_link', 'Add a link to view the full invoice', 'أضف رابطاً لعرض الفاتورة كاملة');
   add('wa_message', 'Message (you can edit it before sending)', 'الرسالة (يمكنك تعديلها قبل الإرسال)');
   add('wa_open', 'Open WhatsApp', 'فتح واتساب');
+  add('wa_web', 'Open in WhatsApp Web (web.whatsapp.com)', 'فتح في واتساب ويب (web.whatsapp.com)');
   add('wa_copy', 'Copy message', 'نسخ الرسالة');
   add('wa_bad_phone', 'This number cannot be used. Oman: 8 digits. Another country: start with + and the country code.', 'لا يمكن استخدام هذا الرقم. عُمان: ٨ أرقام. دولة أخرى: ابدأ بـ + ثم رمز الدولة.');
   add('wa_link_local', 'The invoice link works only on the real website address, so it is left out here.', 'رابط الفاتورة يعمل فقط على عنوان الموقع الحقيقي، لذلك لم يُضف هنا.');

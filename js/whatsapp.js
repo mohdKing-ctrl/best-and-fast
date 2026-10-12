@@ -1,5 +1,5 @@
 /* whatsapp.js - send a bill to the customer on WhatsApp.
-   It opens WhatsApp (the app on the computer, or WhatsApp Web) with the chat and the message already written.
+   It opens WhatsApp (the app on the computer, or WhatsApp Web; address api.whatsapp.com) with the chat and the message already written.
    The message goes out from the WhatsApp account that is signed in on THAT device - the shop's own number.
    Nothing is sent by the server, and the owner presses Send himself, so it can never go to the wrong person
    without him seeing the number first.
@@ -82,7 +82,10 @@
     return L.join('\n');
   }
 
-  function waUrl(phone, text) { return 'https://wa.me/' + (phone || '') + '?text=' + encodeURIComponent(text); }
+  /* api.whatsapp.com is the official address (wa.me only redirects to it, and some networks block wa.me) */
+  function waUrl(phone, text) { return 'https://api.whatsapp.com/send?' + (phone ? 'phone=' + phone + '&' : '') + 'text=' + encodeURIComponent(text); }
+  /* straight to WhatsApp Web (no 'open the app?' page); with no number it falls back to the normal address */
+  function webUrl(phone, text) { return phone ? 'https://web.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(text) : waUrl('', text); }
   /* the text that is really sent: short enough for the address; falls back to fewer lines */
   function fit(inv, lang, link, text) {
     if (waUrl('96800000000', text).length <= MAX_URL) return text;
@@ -135,14 +138,14 @@
     App.openModal('waModal');
   }
 
-  function go() {
+  function go(web) {
     var raw = $s('waPhone').value, phone = normalize(raw);
     if (phone === null) { $s('waErr').textContent = t('wa_bad_phone'); return; }
     if (state === 'pending' && $s('waLink').checked) { $s('waErr').textContent = t('wa_link_pending'); return; }
     $s('waErr').textContent = '';
     var text = fit(cur, $s('waLang').value, $s('waLink').checked && state === 'ready' ? linkUrl() : '', $s('waMsg').value);
     if (text !== $s('waMsg').value) $s('waMsg').value = text;      // too long for one address: show what is really sent
-    var w = window.open(waUrl(phone, text), '_blank');         // (with "noopener" the browser always answers null, so a blocked pop-up could not be told apart)
+    var w = window.open((web ? webUrl : waUrl)(phone, text), '_blank');         // (with "noopener" the browser always answers null, so a blocked pop-up could not be told apart)
     if (!w) { $s('waErr').textContent = t('wa_popup'); return; }
     try { w.opener = null; } catch (e) { /* cross-origin: nothing to cut */ }
     toast(t('wa_opened'));
@@ -156,12 +159,13 @@
   }
 
   function init() {
-    $s('waGo').addEventListener('click', go);
+    $s('waGo').addEventListener('click', function () { go(false); });
+    $s('waWeb').addEventListener('click', function () { go(true); });
     $s('waCopy').addEventListener('click', copy);
     $s('waLang').addEventListener('change', rebuild);
     $s('waLink').addEventListener('change', rebuild);
     $s('waModal').addEventListener('click', function (e) { if (e.target === $s('waModal') || e.target.closest('[data-close]')) cur = null; });
   }
 
-  window.Whatsapp = { init: init, open: open, normalize: normalize, message: message, waUrl: waUrl };
+  window.Whatsapp = { init: init, open: open, normalize: normalize, message: message, waUrl: waUrl, webUrl: webUrl };
 })();
