@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>الفاتورة - Invoice</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#b3000a">
+<link rel="icon" type="image/png" href="img/favicon-64.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/invoice.css?v=6c3ca58b">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  [hidden]{display:none !important}
+  body{font-family:"Tajawal","Segoe UI",Arial,sans-serif;background:#eceef1;color:#1b1f24;min-height:100vh}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#fff;border-bottom:1px solid #dfe2e6;padding:10px 14px;position:sticky;top:0;z-index:5}
+  .bar b{color:#8f0006;font-size:15px}
+  .bar button{border:none;border-radius:11px;background:linear-gradient(135deg,#b3000a,#d9242c);color:#fff;font:inherit;font-weight:800;font-size:14px;padding:10px 18px;cursor:pointer}
+  .wrap{padding:14px 8px 40px;display:flex;justify-content:center}
+  .sheet{width:794px;max-width:none;background:#fff;padding:26px 30px;box-shadow:0 10px 40px -14px rgba(0,0,0,.35);border-radius:6px}
+  .msg{max-width:480px;margin:60px auto;text-align:center;padding:0 20px;line-height:1.9;color:#555}
+  .msg h1{font-size:20px;color:#8f0006;margin-bottom:6px}
+  @media print{
+    .bar{display:none}
+    body{background:#fff}
+    .wrap{padding:0;display:block}
+    .sheet{width:auto;padding:0;box-shadow:none;border-radius:0;zoom:1 !important;transform:none !important}
+  }
+</style>
+</head>
+<body>
+<div class="bar" id="bar" hidden><b id="barTxt"></b><button type="button" id="prBtn"><span dir="rtl">طباعة / حفظ PDF</span> &nbsp;|&nbsp; <span dir="ltr">Print / Save PDF</span></button></div>
+<div class="wrap" id="wrap" hidden><div class="sheet" id="sheet"></div></div>
+<div class="msg" id="msg"><h1>جارٍ تحميل الفاتورة...</h1>Loading the invoice...</div>
+
+<!-- the bill is drawn by the same code that prints it in the shop (print.js); the shop's details come from the server -->
+<script>window.Store = { s: { settings: {}, invoices: [] } };</script>
+<script src="js/core.js?v=93e0a461"></script>
+<script src="js/catalog.js?v=36a632cd"></script>
+<script src="js/print.js?v=ccff569c"></script>
+<script>
+(function () {
+  'use strict';
+  var code = (new URLSearchParams(location.search).get('t') || '').toLowerCase();
+
+  function fail(titleAr, textEn) {
+    document.getElementById('msg').innerHTML = '<h1>' + titleAr + '</h1>' + textEn;
+  }
+  function fit() {
+    var sheet = document.getElementById('sheet'), wrap = document.getElementById('wrap');
+    var k = Math.min(1, (window.innerWidth - 16) / 794);
+    if ('zoom' in document.body.style) { sheet.style.zoom = k; return; }
+    sheet.style.transformOrigin = 'top center';                       // browsers without CSS zoom
+    sheet.style.transform = 'scale(' + k + ')';
+    wrap.style.height = Math.ceil(sheet.offsetHeight * k + 54) + 'px';
+  }
+
+  if (!/^[a-f0-9]{32}$/.test(code)) { fail('رابط غير صحيح', 'This link is not valid.'); return; }
+  fetch('api/index.php?action=public_invoice&t=' + code, { credentials: 'omit' }).then(function (r) {
+    return r.text().then(function (txt) {
+      var j = null; try { j = JSON.parse(txt); } catch (e) { /* not our server */ }
+      if (!j || !j.ok) throw new Error(r.status === 404 ? 'gone' : 'net');
+      return j;
+    });
+  }).then(function (j) {
+    Catalog.setCustom(j.settings);
+    var inv = j.invoice;
+    inv.items = (inv.items || []).map(function (it) { it.price = Number(it.price) || 0; it.q = Number(it.q) || 0; return it; });
+    inv.payments = inv.payments || [];
+    ['total', 'discount', 'vat', 'office', 'behalf', 'vatPct'].forEach(function (k) { inv[k] = Number(inv[k]) || 0; });
+    document.getElementById('sheet').innerHTML = Print.billHtml(inv, j.settings);
+    document.getElementById('barTxt').textContent = (j.settings.nameAr || j.settings.name || '') + ' · ' + inv.number;
+    document.title = inv.number + ' - ' + (j.settings.name || 'Invoice');
+    document.getElementById('msg').hidden = true;
+    document.getElementById('bar').hidden = false;
+    document.getElementById('wrap').hidden = false;
+    fit(); window.addEventListener('resize', fit);
+    document.getElementById('prBtn').addEventListener('click', function () { window.print(); });
+  }).catch(function (e) {
+    if (e.message === 'gone') fail('هذه الفاتورة غير متاحة', 'This invoice is not available. Please contact the garage.');
+    else fail('تعذّر تحميل الفاتورة', 'The invoice could not be loaded. Check your internet and try again.');
+  });
+})();
+</script>
+</body>
+</html>
