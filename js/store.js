@@ -5,14 +5,12 @@
      local   -> this browser's localStorage. Used only when there is no PHP (opening the files
                 from a folder, or a plain static host). It is only a safety net: the real site always uses the server.
    The rest of the app never needs to know which one is active.
-   Every write returns a Promise, so a failure always reaches the screen as a message.
-
-   DEMO BUILD: there is no server, everything lives in this browser (local back end only).   */
+   Every write returns a Promise, so a failure always reaches the screen as a message.   */
 (function () {
   'use strict';
 
   var API = 'api/index.php';
-  var LS_KEY = 'bf_pos_demo_db_v2';
+  var LS_KEY = 'bf_pos_demo_db_v3';
 
   var S = {
     mode: 'local',            // 'server' | 'local'
@@ -119,7 +117,7 @@
     });
     i.payments = (Array.isArray(i.payments) ? i.payments : []).filter(function (p) { return p && nz(p.amount) > 0; })
       .map(function (p) { p.amount = nz(p.amount); p.method = str(p.method) || 'cash'; p.date = str(p.date); return p; });
-    ['customerName', 'customerPhone', 'customerVat', 'customerAddr', 'plate', 'car', 'color', 'km', 'vin', 'claim', 'due', 'validUntil', 'fault', 'note', 'date', 'time', 'shareToken', 'convertedTo'].forEach(function (k) { i[k] = str(i[k]); });
+    ['customerName', 'customerPhone', 'customerVat', 'customerAddr', 'plate', 'car', 'color', 'km', 'vin', 'claim', 'due', 'validUntil', 'fault', 'note', 'date', 'time', 'shareToken', 'convertedTo', 'remindOn', 'remindNote', 'lastReminded'].forEach(function (k) { i[k] = str(i[k]); });
     ['total', 'discount', 'vat', 'behalf', 'vatPct'].forEach(function (k) { i[k] = nz(i[k]); });
     i.office = i.office === undefined || i.office === null ? Math.max(0, nz(i.total) - i.vat - i.behalf + i.discount) : nz(i.office);
     i.void = !!i.void;
@@ -172,6 +170,26 @@
     S.user = { id: 0, username: 'demo', name: 'Demo', role: 'admin' };
     localLoad();
     return Promise.resolve('ready');
+  }
+  function bootWithServer() {
+    return call('status').then(function (st) {
+      S.mode = 'server';
+      if (st.setup_needed) return 'setup';
+      if (!st.user) return 'login';
+      S.user = st.user;
+      return loadServer().then(function () { return 'ready'; });
+    }, function (e) {
+      // Browser-only storage is allowed ONLY when the files are opened from a folder / on this computer.
+      // On a real website address a missing or broken server must be a loud error, never a quiet fallback.
+      var local = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);
+      if (local && (e.code === 'no_api' || e.code === 'network')) {
+        S.mode = 'local';
+        S.user = { id: 0, username: 'local', name: 'Local', role: 'admin' };
+        localLoad();
+        return 'ready';
+      }
+      throw e;
+    });
   }
   function loadServer() {
     return call('load').then(function (d) {

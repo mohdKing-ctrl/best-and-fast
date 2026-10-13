@@ -41,11 +41,11 @@
       { d: 5, t: '08:50', c: 'demo-c3', kind: 'repair', plate: '3302 NK', car: 'Isuzu', color: 'أبيض', km: '98000', due: -3,
         fault: 'صيانة دورية وصوت في الفرامل',
         items: [item('Engine oil & filter change', 1), item('Brake pads replacement (labour)', 1), item('Computer diagnostic scan', 1), item('Labour (per hour)', 3)],
-        pays: [], job: 'ready', note: 'الدفع بعد نهاية الشهر' },
+        pays: [], job: 'ready', note: 'الدفع بعد نهاية الشهر', remind: -1, remindNote: 'قال إنه سيدفع بعد صرف الراتب' },
       { d: 4, t: '12:30', c: 'demo-c5', kind: 'repair', plate: '6710 MM', car: 'Mitsubishi', color: 'أزرق', km: '175000', due: 3,
         fault: 'حادث أمامي: تعديل الشاصيه وصبغ كامل للمقدمة',
         items: [item('Full accident repair (agreed amount)', 1, 380), item('Colour matching (paint mixing)', 1)],
-        pays: [[4, 200, 'transfer']], job: 'repair', note: 'مبلغ متفق عليه - دفعة أولى ٢٠٠' },
+        pays: [[4, 200, 'transfer']], job: 'repair', note: 'مبلغ متفق عليه - دفعة أولى ٢٠٠', remind: 2 },
       { d: 3, t: '16:20', c: 'demo-c1', kind: 'repair', plate: '2288 HD', car: 'Hyundai', color: 'فضي', km: '88000',
         fault: 'المكيف لا يبرد',
         items: [item('Air-conditioning service & gas', 1), item('Battery check / fitting', 1)],
@@ -56,14 +56,14 @@
       { d: 1, t: '14:00', c: 'demo-c4', kind: 'repair', plate: '9013 RQ', car: 'Kia', color: 'أسود', km: '120050', due: 1,
         fault: 'اهتزاز في المقود وصوت في العفشة',
         items: [item('Computer diagnostic scan', 1), item('Suspension & steering repair', 1, 60)],
-        pays: [[1, 30, 'cash']], job: 'repair' },
+        pays: [[1, 30, 'cash']], job: 'repair', remind: 0 },
       { d: 0, t: '09:05', c: null, kind: 'repair', plate: '7745 TY', car: 'Toyota', color: 'ذهبي', km: '256000',
         fault: 'تغيير زيت', items: [item('Engine oil & filter change', 1)],
         pays: [[0, 12, 'cash']], job: 'delivered' },
       { d: 0, t: '10:30', c: 'demo-c3', kind: 'repair', plate: '1199 LC', car: 'Toyota', color: 'أبيض', km: '64000', due: 2,
         fault: 'ضرر في الصدام الخلفي والفانوس',
         items: [item('Rear bumper repair', 1), item('Headlight / taillight fitting', 1)],
-        pays: [], job: 'received' }
+        pays: [], job: 'received', remind: 3 }
     ];
 
     var invoices = specs.map(function (sp, i) {
@@ -80,6 +80,7 @@
         items: sp.items, discount: tt.disc, vatPct: tt.vatPct, vat: tt.vat, office: tt.office, behalf: tt.behalf, total: tt.total,
         payments: sp.pays.map(function (p) { return { date: day(-p[0]), amount: p[1], method: p[2] }; }),
         job: sp.job, note: sp.note || '', void: !!sp.voided,
+        remindOn: sp.remind !== undefined ? day(sp.remind) : '', remindNote: sp.remindNote || '', lastReminded: '',
         cr: settings ? settings.cr : '', vatNo: settings ? settings.vatNo : '', demo: true
       };
       if (sp.voided) doc.voidedAt = day(-sp.d);

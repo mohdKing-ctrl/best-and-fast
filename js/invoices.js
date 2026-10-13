@@ -21,6 +21,11 @@
     var bal = '<div class="mini">' + esc(t('balance')) + ': ' + f3(Calc.balance(inv)) + '</div>';
     return '<span class="chip ' + (st === 'partial' ? 'c-warn' : 'c-bad') + '">' + esc(t(st === 'partial' ? 'st_partial' : 'st_unpaid')) + '</span>' + bal;
   }
+  /* a small bell under "unpaid": the day he will be reminded */
+  function remindMini(i) {
+    if (i.void || !(Calc.balance(i) > 0.0004) || !i.remindOn) return '';
+    return '<div class="mini">&#9200; ' + fdate(i.remindOn) + (Reminders.isDue(i) ? ' <span class="chip c-bad">' + esc(t('rm_due_short')) + '</span>' : '') + '</div>';
+  }
   function jobChip(inv, clickable) {
     var next = JOB_ORDER.indexOf(inv.job) < JOB_ORDER.length - 1;
     var click = clickable && next;
@@ -89,7 +94,7 @@
         '<td data-l="' + esc(t('customer')) + '"><b>' + esc(i.customerName) + '</b>' + (i.customerPhone ? '<div class="mini"><span class="ltr">' + esc(i.customerPhone) + '</span></div>' : '') + '</td>' +
         '<td data-l="' + esc(t('vehicle')) + '" style="max-width:230px">' + vehicleCell(i) + '</td>' +
         '<td class="money num" data-l="' + esc(t('total')) + '">' + f3(i.total) + '</td>' +
-        '<td data-l="' + esc(t('payment')) + '">' + payChip(i) + '</td>' +
+        '<td data-l="' + esc(t('payment')) + '">' + payChip(i) + remindMini(i) + '</td>' +
         '<td data-l="' + esc(t('job_status')) + '">' + (i.void || i.kind === 'parts' ? '' : jobChip(i, Store.canWrite())) + '</td>' +
         '<td data-l=""><div class="acts"><button class="iconbtn wa" data-wa="' + esc(i.id) + '" title="' + esc(t('send_whatsapp')) + '">' + WA + '</button>' +
           '<button class="iconbtn" data-print="' + esc(i.id) + '" title="' + esc(t('print')) + '">&#128424;</button></div></td></tr>';
@@ -178,6 +183,8 @@
           '<div class="fld"><label>' + esc(t('amount')) + '</label><input type="number" id="rpAmt" step="0.001" min="0" value="' + f3(bal) + '"></div>' +
           '<div class="fld"><label>' + esc(t('pay_method')) + '</label><select id="rpMethod">' + payOptions('cash') + '</select></div>' +
           '<button type="button" class="btn b-ok" style="width:100%" id="rpAdd">&#128176; ' + esc(t('receive_payment')) + '</button></div>' : '') +
+      (!inv.void && bal > 0.0004 ? '<div class="remindrow"><span>&#9200; ' + esc(t('remind_on')) + ': <b>' + (inv.remindOn ? fdate(inv.remindOn) + '</b> ' + Reminders.whenChip(inv) : esc(t('rm_none')) + '</b>') + (inv.remindNote ? ' <span class="mini">' + esc(inv.remindNote) + '</span>' : '') + (inv.lastReminded ? ' <span class="mini">&middot; ' + esc(t('rm_last')) + ': ' + fdate(inv.lastReminded) + '</span>' : '') + '</span>' +
+        (canWrite ? '<button type="button" class="tbtn b-soft" id="ivRemind">' + esc(t(inv.remindOn ? 'remind_change' : 'remind_set')) + '</button>' : '') + '</div>' : '') +
       '<div class="err" id="ivErr"></div>' +
       (canWrite && !inv.void && repair ? '<div class="fields" style="margin-top:6px;align-items:end"><div class="fld"><label>' + esc(t('job_status')) + '</label><select id="ivJobSel">' +
         JOB_ORDER.map(function (j) { return '<option value="' + j + '"' + (j === inv.job ? ' selected' : '') + '>' + esc(t('job_' + j)) + '</option>'; }).join('') + '</select></div></div>' : '') +
@@ -284,6 +291,7 @@
       if (e.target.closest('#rpAdd')) addPayment();
       else if (e.target.closest('#ivPrint')) Print.invoice(Store.invoiceById(openId));
       else if (e.target.closest('#ivWa')) Whatsapp.open(Store.invoiceById(openId));
+      else if (e.target.closest('#ivRemind')) Reminders.openSet(openId);
       else if (e.target.closest('#ivVoid')) voidInvoice();
     });
     $('ivBox').addEventListener('change', function (e) { if (e.target.id === 'ivJobSel') setJob(openId, e.target.value); });

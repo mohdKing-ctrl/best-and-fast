@@ -186,6 +186,55 @@
   add('st_quote_prefix', 'Quotation number prefix', 'بادئة رقم عرض السعر');
   add('st_quote_days', 'Quotation valid for (days)', 'مدة صلاحية عرض السعر (أيام)');
 
+
+  /* ---------- payment reminders (تذكيرات الدفع) ---------- */
+  add('nav_reminders', 'Reminders', 'التذكيرات');
+  add('pg_reminders', 'Payment reminders', 'تذكيرات الدفع');
+  add('pg_reminders_s', 'Customers who still owe you - remind them on WhatsApp', 'العملاء الذين عليهم مبالغ - ذكّرهم بالواتساب');
+  add('reminders_hint', 'When a customer pays later, choose the day to remind him (for example after 3 days). On that day a pop-up shows his name and what he still owes, with a button that opens WhatsApp with a polite reminder already written. Everyone who still owes money is listed here.', 'عندما يؤجّل العميل الدفع اختر اليوم الذي تريد تذكيره فيه (مثلاً بعد ٣ أيام). في ذلك اليوم تظهر نافذة باسمه وما بقي عليه مع زر يفتح واتساب برسالة تذكير مهذبة جاهزة. وكل من عليه مبلغ يظهر هنا.');
+  add('remind_me', 'Remind me to collect', 'ذكّرني بالتحصيل');
+  add('remind_none', 'No reminder', 'بدون تذكير');
+  add('rd_1', 'Tomorrow', 'غداً');
+  add('rd_2', 'After 2 days', 'بعد يومين');
+  add('rd_3', 'After 3 days', 'بعد ٣ أيام');
+  add('rd_7', 'After a week', 'بعد أسبوع');
+  add('rd_14', 'After 2 weeks', 'بعد أسبوعين');
+  add('remind_on', 'Reminder date', 'تاريخ التذكير');
+  add('remind_note', 'Note for the reminder', 'ملاحظة للتذكير');
+  add('remind_note_ph', 'e.g. he said he will pay on Thursday', 'مثال: قال إنه سيدفع يوم الخميس');
+  add('remind_set', 'Set reminder', 'تحديد تذكير');
+  add('remind_change', 'Change reminder', 'تغيير التذكير');
+  add('remind_remove', 'Remove reminder', 'إلغاء التذكير');
+  add('remind_saved', 'Reminder saved for {d}', 'تم حفظ التذكير بتاريخ {d}');
+  add('remind_removed', 'Reminder removed', 'تم إلغاء التذكير');
+  add('remind_next', 'Reminder sent - next reminder on {d}', 'تم التذكير - التذكير القادم بتاريخ {d}');
+  add('remind_for', 'Reminder: {name}', 'تذكير: {name}');
+  add('rm_title', 'Payment reminder', 'تذكير بالدفع');
+  add('rm_sub', '{n} customer(s) still owe money and it is time to remind them', 'يوجد {n} عميل عليهم مبالغ وحان وقت تذكيرهم');
+  add('rm_whatsapp', 'Remind on WhatsApp', 'ذكّره بالواتساب');
+  add('rm_later', 'Remind me later', 'ذكّرني لاحقاً');
+  add('rm_open_bill', 'Open bill', 'فتح الفاتورة');
+  add('rm_open_page', 'Open all reminders', 'عرض كل التذكيرات');
+  add('rm_more', '+{n} more customers - see them in Reminders', '+{n} عملاء آخرين - شاهدهم في صفحة التذكيرات');
+  add('rm_overdue', 'Late by {n} day(s)', 'متأخر {n} يوم');
+  add('rm_today', 'Today', 'اليوم');
+  add('rm_in', 'In {n} day(s)', 'بعد {n} يوم');
+  add('rm_none', 'No reminder', 'بدون تذكير');
+  add('rm_due_short', 'Due', 'حان');
+  add('rm_last', 'Last reminded', 'آخر تذكير');
+  add('rm_filter_all', 'Everyone who owes', 'كل من عليه مبلغ');
+  add('rm_filter_due', 'Due now', 'مستحقة الآن');
+  add('rm_filter_up', 'Upcoming', 'قادمة');
+  add('rm_filter_none', 'No reminder set', 'بدون تذكير');
+  add('rm_s_due', 'Due now', 'مستحقة الآن');
+  add('rm_s_up', 'Upcoming', 'قادمة');
+  add('rm_s_none', 'Owing, no reminder', 'عليهم مبالغ بدون تذكير');
+  add('rm_s_amount', 'Total still owed', 'إجمالي المتبقي');
+  add('no_reminders', 'Nobody owes you money', 'لا يوجد عملاء عليهم مبالغ');
+  add('no_reminders_s', 'Bills that are not fully paid appear here', 'تظهر هنا الفواتير غير المسددة بالكامل');
+  add('st_remind_days', 'Default reminder after a credit bill (days, 0 = none)', 'التذكير الافتراضي بعد فاتورة آجلة (أيام، ٠ = بدون)');
+  add('wa_title_reminder', 'Remind the customer to pay', 'تذكير العميل بالسداد');
+
   /* ---------- WhatsApp ---------- */
   add('whatsapp', 'WhatsApp', 'واتساب');
   add('send_whatsapp', 'Send on WhatsApp', 'إرسال بالواتساب');

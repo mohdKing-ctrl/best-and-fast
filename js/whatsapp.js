@@ -9,6 +9,7 @@
   'use strict';
 
   var cur = null;               // the bill being sent
+  var mode = 'bill';            // 'bill' = send the bill, 'reminder' = ask for the money still owed
   var token = '';               // its private link code ('' = none)
   var state = 'none';           // none | pending | ready | failed
   var MAX_URL = 6500;           // keep the wa.me address short enough for every browser
@@ -83,13 +84,40 @@
     return L.join('\n');
   }
 
+  /* A polite payment reminder for a bill that is not fully paid. */
+  var RX = {
+    ar: { hello: 'السلام عليكم', intro: 'تذكير ودّي بالمبلغ المتبقي على الفاتورة رقم', dated: 'بتاريخ', total: 'الإجمالي', paid: 'المدفوع', due: 'المتبقي', car: 'السيارة', plate: 'اللوحة',
+      link: 'لعرض الفاتورة كاملة', ask: 'نرجو التكرم بالسداد في أقرب وقت.', contact: 'للتواصل', thanks: 'شكراً لتعاملكم معنا', omr: 'ر.ع' },
+    en: { hello: 'Hello', intro: 'A friendly reminder about the amount still owed on invoice', dated: 'dated', total: 'Total', paid: 'Paid', due: 'Balance due', car: 'Car', plate: 'Plate',
+      link: 'View the full invoice', ask: 'Please settle it as soon as possible.', contact: 'Contact', thanks: 'Thank you for your business', omr: 'OMR' }
+  };
+  function reminderMessage(inv, lang, link) {
+    var s = Store.s.settings, x = RX[lang === 'en' ? 'en' : 'ar'], L = [];
+    var shop = lang === 'en' ? (s.name || s.nameAr) : (s.nameAr || s.name);
+    L.push('*' + shop + '*');
+    L.push(x.hello + ' ' + inv.customerName + '،'.replace('،', lang === 'en' ? ',' : '،'));
+    L.push(x.intro + ' ' + inv.number + ' ' + x.dated + ' ' + fdate(inv.date) + ':');
+    if (inv.kind !== 'parts') {
+      var car = [inv.car, inv.plate ? x.plate + ' ' + inv.plate : ''].filter(Boolean).join(' - ');
+      if (car) L.push(x.car + ': ' + car);
+    }
+    L.push(x.total + ': ' + f3(inv.total) + ' ' + x.omr);
+    L.push(x.paid + ': ' + f3(Calc.paid(inv)) + ' ' + x.omr);
+    L.push('*' + x.due + ': ' + f3(Calc.balance(inv)) + ' ' + x.omr + '*');
+    if (link) { L.push(''); L.push(x.link + ':'); L.push(link); }
+    L.push(''); L.push(x.ask);
+    if (s.phone) L.push(x.contact + ': ' + s.phone);
+    L.push(x.thanks);
+    return L.join('\n');
+  }
+
   /* api.whatsapp.com is the official address (wa.me only redirects to it, and some networks block wa.me) */
   function waUrl(phone, text) { return 'https://api.whatsapp.com/send?' + (phone ? 'phone=' + phone + '&' : '') + 'text=' + encodeURIComponent(text); }
   /* straight to WhatsApp Web (no 'open the app?' page); with no number it falls back to the normal address */
   function webUrl(phone, text) { return phone ? 'https://web.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(text) : waUrl('', text); }
   /* the text that is really sent: short enough for the address; falls back to fewer lines */
   function fit(inv, lang, link, text) {
-    if (waUrl('96800000000', text).length <= MAX_URL) return text;
+    if (mode === 'reminder' || waUrl('96800000000', text).length <= MAX_URL) return text;
     var short = message(inv, lang, link, 8);
     if (waUrl('96800000000', short).length <= MAX_URL) return short;
     return message(inv, lang, link, 3);
@@ -106,15 +134,17 @@
     if (!cur) return;
     var lang = $s('waLang').value;
     var link = $s('waLink').checked && state === 'ready' ? linkUrl() : '';
-    $s('waMsg').value = message(cur, lang, link);
+    $s('waMsg').value = mode === 'reminder' ? reminderMessage(cur, lang, link) : message(cur, lang, link);
     var st = '';
     if (!canLink()) st = isLocalHost() ? t('wa_link_local') : '';
     else if (state === 'pending') st = t('wa_link_pending');
     else if (state === 'failed') st = t('wa_link_failed');
     $s('waStatus').textContent = st;
   }
-  function open(inv) {
+  function open(inv, opts) {
     if (!inv) return;
+    mode = opts && opts.reminder ? 'reminder' : 'bill';
+    $s('waTitleTxt').setAttribute('data-i18n', mode === 'reminder' ? 'wa_title_reminder' : 'wa_title'); $s('waTitleTxt').textContent = t(mode === 'reminder' ? 'wa_title_reminder' : 'wa_title');
     cur = inv; token = inv.shareToken || ''; $s('waErr').textContent = '';
     var cust = inv.customerId ? Store.customerById(inv.customerId) : null;
     $s('waPhone').value = inv.customerPhone || (cust && cust.phone) || '';
@@ -150,6 +180,7 @@
     if (!w) { $s('waErr').textContent = t('wa_popup'); return; }
     try { w.opener = null; } catch (e) { /* cross-origin: nothing to cut */ }
     toast(t('wa_opened'));
+    if (mode === 'reminder' && window.Reminders) Reminders.markSent(cur);        // remember it and move the next reminder forward
   }
   function copy() {
     var ta = $s('waMsg'), text = ta.value;
@@ -168,5 +199,5 @@
     $s('waModal').addEventListener('click', function (e) { if (e.target === $s('waModal') || e.target.closest('[data-close]')) cur = null; });
   }
 
-  window.Whatsapp = { init: init, open: open, normalize: normalize, message: message, waUrl: waUrl, webUrl: webUrl };
+  window.Whatsapp = { init: init, open: open, normalize: normalize, message: message, reminderMessage: reminderMessage, waUrl: waUrl, webUrl: webUrl };
 })();

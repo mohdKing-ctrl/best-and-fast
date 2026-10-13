@@ -10,6 +10,7 @@
   var custId = null;
   var payTouched = false;
   var saving = false;
+  var remindTouched = false; // he chose (or cleared) the reminder date himself: stop suggesting one
   var fromQuote = null;     // the quotation this bill is being made from (it becomes "accepted" when the bill is saved)
   var saveKey = null, saveFp = '';      // one-time key of the bill being saved (kept while a save is being retried)
 
@@ -106,11 +107,32 @@
     b.className = 'balance' + (bal > 0.0004 ? ' due' : '');
     b.innerHTML = '<span>' + esc(bal > 0.0004 ? t('balance_due') : t('fully_paid')) + '</span><span class="num">' + f3(bal) + ' ' + esc(t('omr')) + '</span>';
     $('nvNo').textContent = I18N.t('next_no') + ' ' + nextNumber();
+    renderRemind(bal);
     return tt;
   }
   function nextNumber() {
     return isQuote() ? (S().settings.quotePrefix || 'QT') + '-' + String((S().qcounter || 0) + 1).padStart(5, '0')
                      : (S().settings.prefix || 'INV') + '-' + String((S().counter || 0) + 1).padStart(5, '0');
+  }
+
+  /* The payment reminder: shown only when part of the bill stays unpaid. The default date comes from Settings (3 days). */
+  var REMIND_DAYS = [1, 2, 3, 7, 14];
+  function renderRemind(bal) {
+    var show = !isQuote() && bal > 0.0004;
+    $('nvRemindBox').hidden = !show;
+    if (!show) { $('nvRemindOn').value = ''; remindTouched = false; markQuick(); return; }
+    if (!remindTouched && !$('nvRemindOn').value) {
+      var n = Number(S().settings.remindDays);
+      if (n > 0) $('nvRemindOn').value = ymd(addDays(n));
+    }
+    markQuick();
+  }
+  function markQuick() {
+    var v = $('nvRemindOn').value;
+    document.querySelectorAll('#nvRemindQuick button').forEach(function (b) {
+      var on = b.dataset.d === '0' ? !v : v === ymd(addDays(Number(b.dataset.d)));
+      b.classList.toggle('active', on);
+    });
   }
 
   /* ------------------------------------------------ cart actions */
@@ -186,7 +208,10 @@
       cr: s.cr, vatNo: s.vatNo
     };
     if (quote) { doc.validUntil = $('nvValid').value || ''; doc.status = 'open'; doc.convertedTo = ''; }
-    else { doc.due = kind === 'repair' ? $('nvDue').value : ''; doc.job = kind === 'repair' ? 'received' : 'delivered'; }
+    else {
+      doc.due = kind === 'repair' ? $('nvDue').value : ''; doc.job = kind === 'repair' ? 'received' : 'delivered';
+      doc.remindOn = r3(tt.total - paid) > 0.0004 ? $('nvRemindOn').value : ''; doc.remindNote = ''; doc.lastReminded = '';
+    }
     return doc;
   }
   /* after: 'print' | 'whatsapp' | '' */
@@ -198,7 +223,7 @@
     if (S().settings.vatOn && !S().settings.vatNo) { toast(t('err_vat_no'), 'bad'); return; }
 
     var inv = build(), quote = isQuote();
-    var fp = JSON.stringify([inv.items, inv.customerName, inv.customerPhone, inv.kind, inv.plate, inv.car, inv.color, inv.km, inv.vin, inv.claim, inv.due, inv.validUntil, inv.fault, inv.date, inv.total, inv.payments, inv.discount, inv.note]);
+    var fp = JSON.stringify([inv.items, inv.customerName, inv.customerPhone, inv.kind, inv.plate, inv.car, inv.color, inv.km, inv.vin, inv.claim, inv.due, inv.validUntil, inv.remindOn, inv.fault, inv.date, inv.total, inv.payments, inv.discount, inv.note]);
     if (!saveKey || fp !== saveFp) { saveKey = uid('k'); saveFp = fp; }     // edited since the failed attempt = a different bill
     inv.clientKey = saveKey;
     var needCust = !custId && $('nvName').value.trim() && $('nvSaveCust').checked;
@@ -226,8 +251,8 @@
 
   function reset(silent) {
     if (!silent && cart.length && !confirm(t('confirm_clear'))) return;
-    cart = []; custId = null; payTouched = false; saveKey = null; saveFp = ''; fromQuote = null;
-    ['nvName', 'nvPhone', 'nvCVat', 'nvAddr', 'nvPlate', 'nvCar', 'nvColor', 'nvKm', 'nvVin', 'nvClaim', 'nvFault', 'nvDue', 'nvValid', 'nvNote'].forEach(function (id) { $(id).value = ''; });
+    cart = []; custId = null; payTouched = false; remindTouched = false; saveKey = null; saveFp = ''; fromQuote = null;
+    ['nvName', 'nvPhone', 'nvCVat', 'nvAddr', 'nvPlate', 'nvCar', 'nvColor', 'nvKm', 'nvVin', 'nvClaim', 'nvFault', 'nvDue', 'nvValid', 'nvNote', 'nvRemindOn'].forEach(function (id) { $(id).value = ''; });
     $('nvDisc').value = ''; $('nvCompany').checked = false; toggleCompany();
     $('nvSaveCust').checked = true; $('nvSaveCustWrap').style.display = 'none';
     $('nvDate').value = ymd(); $('nvPay').value = 'cash'; kind = 'repair';
@@ -288,6 +313,12 @@
     $('nvPaid').addEventListener('input', function () { payTouched = true; calc(); });
     $('nvPayFull').addEventListener('click', function () { payTouched = false; calc(); });
     $('nvPayNone').addEventListener('click', function () { payTouched = true; $('nvPaid').value = '0.000'; calc(); });
+    $('nvRemindQuick').innerHTML = '<button type="button" data-d="0">' + esc(t('remind_none')) + '</button>' + REMIND_DAYS.map(function (n) { return '<button type="button" data-d="' + n + '">' + esc(t('rd_' + n)) + '</button>'; }).join('');
+    $('nvRemindQuick').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      remindTouched = true; $('nvRemindOn').value = b.dataset.d === '0' ? '' : ymd(addDays(Number(b.dataset.d))); markQuick();
+    });
+    $('nvRemindOn').addEventListener('input', function () { remindTouched = true; markQuick(); });
     $('nvSave').addEventListener('click', function () { save('print'); });
     $('nvSaveWa').addEventListener('click', function () { save('whatsapp'); });
     $('nvSaveOnly').addEventListener('click', function () { save(''); });
@@ -298,6 +329,7 @@
   }
 
   function refresh() {
+    $('nvRemindQuick').innerHTML = '<button type="button" data-d="0">' + esc(t('remind_none')) + '</button>' + REMIND_DAYS.map(function (n) { return '<button type="button" data-d="' + n + '">' + esc(t('rd_' + n)) + '</button>'; }).join('');
     renderKind(); renderCats(); renderGrid(); renderCart();
     $('nvDate').max = ymd();
   }

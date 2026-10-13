@@ -11,7 +11,7 @@
   function fill() {
     var s = Store.s.settings;
     Object.keys(FIELDS).forEach(function (k) { $(FIELDS[k]).value = s[k] || ''; });
-    $('stQuoteDays').value = s.quoteDays || 14; $('stVatOn').checked = !!s.vatOn; $('stVatPct').value = s.vatPct; $('stPaper').value = s.paper || 'a4';
+    $('stQuoteDays').value = s.quoteDays || 14; $('stRemindDays').value = s.remindDays === undefined ? 3 : s.remindDays; $('stVatOn').checked = !!s.vatOn; $('stVatPct').value = s.vatPct; $('stPaper').value = s.paper || 'a4';
     var server = Store.isServer();
     var seeAll = Store.canSeeAll();
     $('stBizCard').style.display = seeAll ? '' : 'none';
@@ -56,6 +56,7 @@
     d.prefix = (d.prefix || 'INV').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'INV';
     d.quotePrefix = (d.quotePrefix || 'QT').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'QT';
     d.quoteDays = Math.max(1, Math.min(365, Math.round(num($('stQuoteDays').value)) || 14));
+    d.remindDays = Math.max(0, Math.min(90, Math.round(num($('stRemindDays').value)) || 0));
     if (!d.name) { toast(t('err_name'), 'bad'); return; }
     if (d.vatOn && !d.vatNo) { toast(t('err_vat_no'), 'bad'); return; }
     if (d.vatOn && !(d.vatPct > 0 && d.vatPct <= 100)) { toast(t('err_vat_pct'), 'bad'); return; }

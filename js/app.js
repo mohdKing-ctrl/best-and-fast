@@ -5,7 +5,7 @@
   var current = 'new';
   var inited = false;
   var PREF_KEY = 'bf_pos_demo_pref';
-  var VIEWS = ['new', 'invoices', 'quotes', 'customers', 'services', 'expenses', 'reports', 'settings'];
+  var VIEWS = ['new', 'invoices', 'reminders', 'quotes', 'customers', 'services', 'expenses', 'reports', 'settings'];
   var ADMIN_ONLY = { services: 1, reports: 1, expenses: 1 };
 
   function t(k, v) { return I18N.t(k, v); }
@@ -49,11 +49,11 @@
     VIEWS.forEach(function (v) { $('view-' + v).classList.toggle('active', v === view); });
     document.querySelectorAll('.navi button').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
     updateTitle();
-    var map = { new: NewInvoice, invoices: Invoices, quotes: Quotes, customers: Customers, services: Services, expenses: Expenses, reports: Reports, settings: Settings };
+    var map = { new: NewInvoice, invoices: Invoices, reminders: Reminders, quotes: Quotes, customers: Customers, services: Services, expenses: Expenses, reports: Reports, settings: Settings };
     map[view].refresh();
     window.scrollTo(0, 0);
     // Another device may have added bills: pick up the newest data when these screens are opened.
-    if (Store.isServer() && (view === 'invoices' || view === 'quotes' || view === 'customers' || view === 'reports' || view === 'expenses')) {
+    if (Store.isServer() && (view === 'invoices' || view === 'reminders' || view === 'quotes' || view === 'customers' || view === 'reports' || view === 'expenses')) {
       Store.reload().then(function () { if (current === view) { map[view].refresh(); updateBadge(); refreshDemoBar(); } }).catch(function () { /* keep showing what we have */ });
     }
   }
@@ -66,6 +66,7 @@
     $('navCount').textContent = n; $('navCount').style.display = n ? '' : 'none';
     var q = Store.s.quotes.filter(function (x) { return Print.quoteState(x) === 'open'; }).length;      // quotations waiting for an answer
     $('navQuotes').textContent = q; $('navQuotes').style.display = q ? '' : 'none';
+    if (window.Reminders) Reminders.badge();
   }
   function applyBranding() {
     var s = Store.s.settings;
@@ -89,6 +90,7 @@
   function refreshAll() {
     NewInvoice.refresh(); applyBranding(); updateBadge(); updateWho(); refreshDemoBar();
     if (current === 'invoices') Invoices.refresh();
+    if (current === 'reminders') Reminders.refresh();
     if (current === 'quotes') Quotes.refresh();
     if (current === 'expenses') Expenses.refresh();
     if (current === 'customers') Customers.refresh();
@@ -157,11 +159,12 @@
   function start() {
     $('gate').hidden = true;
     if (!inited) {
-      NewInvoice.init(); Invoices.init(); Quotes.init(); Expenses.init(); Customers.init(); Services.init(); Reports.init(); Settings.init(); Whatsapp.init();
+      NewInvoice.init(); Invoices.init(); Reminders.init(); Quotes.init(); Expenses.init(); Customers.init(); Services.init(); Reports.init(); Settings.init(); Whatsapp.init();
       inited = true;
     }
     NewInvoice.refresh(); applyBranding(); updateBadge(); updateWho(); refreshDemoBar();
     show('new');
+    Reminders.startChecks();
   }
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -207,7 +210,7 @@
     // Coming back to this tab (e.g. on the phone): refresh the numbers.
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible' && inited && $('gate').hidden && Store.isServer()) {
-        Store.reload().then(function () { refreshAll(); }).catch(function () { /* ignore */ });
+        Store.reload().then(function () { refreshAll(); Reminders.check(); }).catch(function () { /* ignore */ });
       }
     });
     // Safety net: any failure that slipped through is shown as a message, never silently ignored.

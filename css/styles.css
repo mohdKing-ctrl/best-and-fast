@@ -466,3 +466,19 @@ html{scrollbar-color:var(--faint) var(--bg)}
 .profit tfoot td{border-top:2px solid var(--line);background:var(--surface2)}
 #view-expenses .toolbar .tbtn.b-main{box-shadow:none}
 .viewonly #qtNew,.viewonly #exAdd,.viewonly #exBody [data-act=edit],.viewonly #exBody [data-act=del]{display:none !important}
+
+/* ---------- payment reminders ---------- */
+.navi .badge.badge-red{background:var(--bad);color:#fff}
+.navi button.active .badge.badge-red{background:#fff;color:var(--bad)}
+.remindbox{margin-top:12px;padding:11px 12px;border-radius:12px;background:var(--warnsoft);border:1px dashed var(--warn)}
+.remindbox .fld label{color:var(--warn);font-weight:800}
+.quick.wrapq{flex-wrap:wrap}
+.quick.wrapq button{flex:1 1 auto;min-width:64px}
+.quick button.active{background:var(--brand);border-color:var(--brand);color:#fff}
+.remindrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--warnsoft);color:var(--txt);font-size:13px;font-weight:600}
+.rmlist{display:flex;flex-direction:column;gap:11px;max-height:58vh;overflow-y:auto;padding-inline-end:4px}
+.rmcard{border:1.5px solid var(--warn);background:var(--warnsoft);border-radius:14px;padding:12px 14px}
+.rmcard .rmtop{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15.5px;margin-bottom:3px}
+.rmcard .rmact{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.rmcard .rmact .btn{width:auto;flex:1 1 auto;padding:9px 12px;font-size:13px;margin-top:0}
+.viewonly #rmBody [data-rset],.viewonly #rsSave,.viewonly #rsRemove{display:none !important}
