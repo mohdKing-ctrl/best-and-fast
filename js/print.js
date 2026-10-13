@@ -15,6 +15,7 @@
   function jobName(j) { var p = JOBS[j] || JOBS.received; return p[0] + ' / ' + p[1]; }
 
   function docType(inv) {
+    if (inv.kind === 'quote') return ['QUOTATION', 'عرض أسعار'];
     if (!(inv.vatPct > 0)) return ['INVOICE', 'فاتورة'];
     if (inv.total < 500 && !inv.customerVat) return ['SIMPLIFIED TAX INVOICE', 'فاتورة ضريبية مبسطة'];
     return ['TAX INVOICE', 'فاتورة ضريبية'];
@@ -24,12 +25,16 @@
     return '<div class="row"><span>' + esc(en) + ' / ' + esc(ar) + '</span><b>' + val + '</b></div>';
   }
   function cell(v) { return '<b class="ltr">' + esc(v) + '</b>'; }
-  function hasVehicle(inv) { return inv.kind !== 'parts' && !!(inv.plate || inv.car || inv.color || inv.km || inv.due || inv.fault); }
+  function hasVehicle(inv) { return inv.kind !== 'parts' && !!(inv.plate || inv.car || inv.color || inv.km || inv.vin || inv.claim || inv.due || inv.fault); }
+  var QSTAT = { open: ['Open', 'مفتوح'], accepted: ['Accepted', 'مقبول'], rejected: ['Rejected', 'مرفوض'], expired: ['Expired', 'منتهي الصلاحية'] };
+  /* open + past its validity date = expired (worked out on the fly, never stored) */
+  function quoteState(q) { return q.status === 'open' && q.validUntil && q.validUntil < ymd() ? 'expired' : (q.status || 'open'); }
+  function quoteStatus(q) { var p = QSTAT[quoteState(q)] || QSTAT.open; return p[0] + ' / ' + p[1]; }
 
   /* ------------------------------------------------ A4 invoice */
   function a4(inv) {
     var s = S(), dt = docType(inv), tax = inv.vatPct > 0;
-    var kind = Catalog.kind(inv.kind);
+    var kind = Catalog.kind(inv.kind), quote = inv.kind === 'quote';
     var paid = Calc.paid(inv), bal = Calc.balance(inv);
 
     var rows = inv.items.map(function (it, i) {
@@ -49,8 +54,8 @@
     var vehicle = hasVehicle(inv) ?
       '<div class="box" style="margin-bottom:8px"><div class="t"><span>Vehicle details</span><span>بيانات المركبة</span></div>' +
         '<div class="meta" style="margin:0;gap:2px 22px">' +
-        '<div>' + row('Plate No', 'رقم اللوحة', inv.plate ? cell(inv.plate) : '') + row('Car', 'السيارة', esc(inv.car)) + row('Colour', 'اللون', esc(inv.color)) + '</div>' +
-        '<div>' + row('Mileage (km)', 'قراءة العداد (كم)', inv.km ? cell(inv.km) : '') +
+        '<div>' + row('Plate No', 'رقم اللوحة', inv.plate ? cell(inv.plate) : '') + row('Car', 'السيارة', esc(inv.car)) + row('Colour', 'اللون', esc(inv.color)) + row('Chassis / VIN', 'رقم الشاصي', inv.vin ? cell(inv.vin) : '') + '</div>' +
+        '<div>' + row('Mileage (km)', 'قراءة العداد (كم)', inv.km ? cell(inv.km) : '') + row('Claim / Ref no', 'رقم المطالبة / المرجع', inv.claim ? cell(inv.claim) : '') +
           row('Expected delivery', 'موعد التسليم المتوقع', inv.due ? '<span class="ltr">' + fdate(inv.due) + '</span>' : '') + '</div></div>' +
         (inv.fault ? '<div class="fault"><b>Work required / العمل المطلوب:</b> ' + esc(inv.fault) + '</div>' : '') + '</div>' : '';
 
@@ -74,14 +79,16 @@
           row('Address', 'العنوان', esc(inv.customerAddr)) +
           row('Customer VATIN', 'الرقم الضريبي للعميل', inv.customerVat ? cell(inv.customerVat) : '') + '</div>' +
         '<div class="box"><div class="t"><span>Invoice</span><span>الفاتورة</span></div>' +
-          row('Invoice No', 'رقم الفاتورة', cell(inv.number)) +
+          (quote ? row('Quotation No', 'رقم عرض السعر', cell(inv.number)) : row('Invoice No', 'رقم الفاتورة', cell(inv.number))) +
           row('Date', 'التاريخ', '<span class="ltr">' + fdate(inv.date) + ' ' + esc(inv.time || '') + '</span>') +
           row('Type', 'النوع', esc(kind.en) + ' / ' + esc(kind.ar)) +
-          (inv.kind !== 'parts' && !inv.void ? row('Status', 'الحالة', esc(jobName(inv.job))) : '') +
+          (quote ? row('Valid until', 'صالح حتى', inv.validUntil ? '<span class="ltr">' + fdate(inv.validUntil) + '</span>' : '') + row('Status', 'الحالة', esc(quoteStatus(inv))) : '') +
+          (inv.kind === 'repair' && !inv.void ? row('Status', 'الحالة', esc(jobName(inv.job))) : '') +
           row('Prepared by', 'أعدّها', esc(inv.createdBy || '')) + '</div>' +
       '</div>' + vehicle +
       '<table><thead><tr><th class="c" style="width:28px">#</th><th>Description / الوصف</th><th class="c">Unit / الوحدة</th><th class="c">Qty / الكمية</th><th class="n">Rate / السعر</th><th class="n">Amount / المبلغ (OMR)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="bottom"><div>' +
+        (quote ? '<div class="note"><b>Price quotation / عرض سعر:</b> This is a quotation, not an invoice. The final amount may change after inspection.<br><span style="direction:rtl;display:block">هذا عرض سعر وليس فاتورة، وقد يتغيّر المبلغ النهائي بعد الفحص.</span></div>' : '') +
         (inv.note ? '<div class="note"><b>Note / ملاحظة:</b> ' + esc(inv.note) + '</div>' : '') +
         (s.bank ? '<div class="note"><b>Bank / البنك:</b> ' + esc(s.bank).replace(/\n/g, '<br>') + '</div>' : '') +
         (payRows ? '<div class="box"><div class="t"><span>Payments received</span><span>الدفعات المستلمة</span></div>' + payRows + '</div>' : '') +
@@ -91,10 +98,10 @@
         (tax ? row('Taxable amount', 'المبلغ الخاضع للضريبة', f3(inv.office - inv.discount)) + row('VAT ' + inv.vatPct + '%', 'ضريبة القيمة المضافة', f3(inv.vat)) : '') +
         (inv.behalf > 0 ? row('Other charges (no VAT)', 'رسوم أخرى (بدون ضريبة)', f3(inv.behalf)) : '') +
         '<div class="grand"><span>TOTAL / الإجمالي (OMR)</span><span>' + f3(inv.total) + '</span></div>' +
-        row('Paid', 'المدفوع', f3(paid)) +
-        (bal > 0.0004 ? '<div class="row" style="font-weight:800"><span style="color:#b00005">Balance due / المتبقي</span><b style="color:#b00005">' + f3(bal) + '</b></div>' : '') +
+        (quote ? '' : row('Paid', 'المدفوع', f3(paid))) +
+        (!quote && bal > 0.0004 ? '<div class="row" style="font-weight:800"><span style="color:#b00005">Balance due / المتبقي</span><b style="color:#b00005">' + f3(bal) + '</b></div>' : '') +
       '</div></div>' +
-      '<div class="sign"><div>Prepared by / أعدّها</div><div>Customer signature / توقيع العميل</div><div>Stamp / الختم</div></div>' +
+      '<div class="sign"><div>Prepared by / أعدّها</div><div>' + (quote ? 'Customer approval / موافقة العميل' : 'Customer signature / توقيع العميل') + '</div><div>Stamp / الختم</div></div>' +
       '<div class="foot">' + esc(s.footer) + (s.terms ? '<br>' + esc(s.terms) : '') + '</div>' +
     '</div>';
   }
@@ -161,10 +168,10 @@
   }
 
   window.Print = {
-    invoice: function (inv) { var p = S().paper === '80' ? '80' : 'a4'; run(p === '80' ? thermal(inv) : a4(inv), p); },
+    invoice: function (inv) { var p = S().paper === '80' && inv.kind !== 'quote' ? '80' : 'a4'; run(p === '80' ? thermal(inv) : a4(inv), p); },
     statement: function (cust) { run(statement(cust), 'a4'); },
     /* the A4 bill as HTML, drawn with the shop's details given (used by bill.html) */
     billHtml: function (inv, settings) { override = settings; try { return a4(inv); } finally { override = null; } },
-    PAYM: PAYM, JOBS: JOBS, docType: docType
+    PAYM: PAYM, JOBS: JOBS, docType: docType, quoteState: quoteState, quoteStatus: quoteStatus
   };
 })();

@@ -44,7 +44,7 @@
         else if (i.void || Calc.payStatus(i) !== pay) return false;
       }
       if (q) {
-        var blob = [i.number, i.customerName, i.customerPhone, i.plate, i.car, i.color, i.fault, i.note,
+        var blob = [i.number, i.customerName, i.customerPhone, i.plate, i.car, i.color, i.vin, i.claim, i.fault, i.note,
           i.items.map(function (x) { return x.n + ' ' + x.a; }).join(' ')].join(' ').toLowerCase();
         if (blob.indexOf(q) === -1) return false;
       }
@@ -159,7 +159,7 @@
         kv('cust_vat', inv.customerVat ? '<span class="ltr">' + esc(inv.customerVat) + '</span>' : '') + kv('address', esc(inv.customerAddr)) +
         kv('bill_type', esc(I18N.pick(kind.en, kind.ar))) +
         (repair ? kv('plate_no', inv.plate ? '<span class="ltr">' + esc(inv.plate) + '</span>' : '') + kv('car', esc(inv.car)) + kv('color', esc(inv.color)) +
-          kv('mileage', inv.km ? '<span class="ltr">' + esc(inv.km) + '</span>' : '') + kv('due_date', inv.due ? fdate(inv.due) : '') + kv('fault', esc(inv.fault)) : '') +
+          kv('mileage', inv.km ? '<span class="ltr">' + esc(inv.km) + '</span>' : '') + kv('vin', inv.vin ? '<span class="ltr">' + esc(inv.vin) + '</span>' : '') + kv('claim', inv.claim ? '<span class="ltr">' + esc(inv.claim) + '</span>' : '') + kv('due_date', inv.due ? fdate(inv.due) : '') + kv('fault', esc(inv.fault)) : '') +
         kv('note', esc(inv.note)) +
       '</div>' +
       '<div class="tblcard" style="box-shadow:none"><div class="tblwrap"><table><thead><tr><th>' + esc(t('service')) + '</th><th>' + esc(t('unit')) + '</th><th>' + esc(t('qty')) + '</th><th>' + esc(t('price')) + '</th><th>' + esc(t('amount')) + '</th></tr></thead><tbody>' + items + '</tbody></table></div></div>' +

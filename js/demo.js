@@ -22,7 +22,8 @@
       { id: 'demo-c2', name: 'خالد بن محمد البلوشي', phone: '', company: false, vatNo: '', addr: '', notes: 'عميل مثال' },
       { id: 'demo-c3', name: 'شركة النخيل للنقل', phone: '', company: true, vatNo: '', addr: 'سمائل', notes: 'عميل مثال - شركة' },
       { id: 'demo-c4', name: 'سعيد بن ناصر الرحبي', phone: '', company: false, vatNo: '', addr: '', notes: 'عميل مثال' },
-      { id: 'demo-c5', name: 'مؤسسة الواحة للمقاولات', phone: '', company: true, vatNo: '', addr: 'سمائل', notes: 'عميل مثال - شركة' }
+      { id: 'demo-c5', name: 'مؤسسة الواحة للمقاولات', phone: '', company: true, vatNo: '', addr: 'سمائل', notes: 'عميل مثال - شركة' },
+      { id: 'demo-c6', name: 'شركة الخليج للتأمين', phone: '', company: true, vatNo: '', addr: 'مسقط', notes: 'عميل مثال - شركة تأمين' }
     ].map(function (c) { c.demo = true; return c; });
     var C = {}; customers.forEach(function (c) { C[c.id] = c; });
 
@@ -74,7 +75,7 @@
         date: day(-sp.d), time: sp.t,
         customerId: cust ? cust.id : null, customerName: cust ? cust.name : 'عميل نقدي', customerPhone: '',
         customerVat: '', customerAddr: cust && cust.company ? cust.addr : '', company: !!(cust && cust.company),
-        kind: sp.kind, plate: sp.plate || '', car: sp.car || '', color: sp.color || '', km: sp.km || '',
+        kind: sp.kind, plate: sp.plate || '', car: sp.car || '', color: sp.color || '', km: sp.km || '', vin: sp.vin || '', claim: sp.claim || '',
         due: sp.due !== undefined ? day(sp.due) : '', fault: sp.fault || '',
         items: sp.items, discount: tt.disc, vatPct: tt.vatPct, vat: tt.vat, office: tt.office, behalf: tt.behalf, total: tt.total,
         payments: sp.pays.map(function (p) { return { date: day(-p[0]), amount: p[1], method: p[2] }; }),
@@ -84,7 +85,48 @@
       if (sp.voided) doc.voidedAt = day(-sp.d);
       return doc;
     });
-    return { customers: customers, invoices: invoices, counter: invoices.length };
+
+    /* ---- quotations: an insurance claim, a car imported from America, an expired one, a rejected one ---- */
+    var qspecs = [
+      { d: 15, t: '10:15', c: 'demo-c1', plate: '5231 AB', car: 'Toyota Camry', color: 'أبيض', km: '143000', valid: -1, status: 'open',
+        fault: 'تقدير إصلاح وصبغ الصدام الخلفي', items: [item('Rear bumper repair', 1), item('Bumper paint', 1)], note: 'انتهت مدة صلاحية العرض - مثال' },
+      { d: 7, t: '11:40', c: 'demo-c6', plate: '4410 XY', car: 'Toyota Land Cruiser', color: 'أبيض', km: '88000', valid: 7, status: 'accepted',
+        claim: 'CLM-2026-0142', vin: 'JTMHV05J004123456', fault: 'عرض أسعار لشركة التأمين - ضرر أمامي كامل',
+        items: [item('Front bumper repair', 1), item('Hood (bonnet) repair', 1), item('Fender (wing) repair', 2), item('Headlight / taillight fitting', 2), item('Single panel paint', 4), item('Colour matching (paint mixing)', 1)],
+        note: 'وافقت شركة التأمين - يمكن تحويله إلى فاتورة' },
+      { d: 3, t: '15:30', c: 'demo-c2', plate: '', car: 'Chevrolet Camaro', color: 'أحمر', km: '31000', valid: 11, status: 'open',
+        vin: '1G1FB1RS5L0123456', fault: 'سيارة مستوردة من أمريكا - تقدير إصلاح وصبغ كامل قبل التسجيل',
+        items: [item('Full accident repair (agreed amount)', 1, 650), item('Full body paint', 1), item('Colour matching (paint mixing)', 1), item('Polishing & waxing', 1)], disc: 20, note: 'الخصم للعميل الدائم' },
+      { d: 2, t: '09:20', c: 'demo-c4', plate: '9013 RQ', car: 'Kia Sportage', color: 'أسود', km: '120040', valid: 12, status: 'rejected',
+        fault: 'تقدير إعادة تأهيل المحرك', items: [item('Engine repair / overhaul', 1, 280), item('Labour (per hour)', 6)], note: 'رفض العميل السعر - مثال' }
+    ];
+    var quotes = qspecs.map(function (sp, i) {
+      var no = i + 1, cust = C[sp.c], tt = Calc.totals(sp.items, sp.disc || 0, false, 0);
+      return {
+        id: String(no), no: no, number: (settings && settings.quotePrefix || 'QT') + '-' + String(no).padStart(5, '0'),
+        created: Math.floor(addDays(-sp.d).getTime() / 1000), createdBy: userName || '',
+        date: day(-sp.d), time: sp.t, validUntil: day(sp.valid),
+        customerId: cust.id, customerName: cust.name, customerPhone: '', customerVat: '', customerAddr: cust.company ? cust.addr : '', company: !!cust.company,
+        kind: 'quote', plate: sp.plate, car: sp.car, color: sp.color, km: sp.km, vin: sp.vin || '', claim: sp.claim || '', fault: sp.fault,
+        items: sp.items, discount: tt.disc, vatPct: tt.vatPct, vat: tt.vat, office: tt.office, behalf: tt.behalf, total: tt.total,
+        payments: [], status: sp.status, convertedTo: '', note: sp.note || '', void: false,
+        cr: settings ? settings.cr : '', vatNo: settings ? settings.vatNo : '', demo: true
+      };
+    });
+
+    /* ---- expenses per section ---- */
+    var xs = [
+      ['general', 'Rent', 'إيجار الورشة - شهر أكتوبر', 80, 10, 'transfer'], ['general', 'Electricity & water', 'فاتورة الكهرباء والماء', 38.5, 8, 'cash'],
+      ['general', 'Workers wages', 'أجور العمال', 180, 5, 'transfer'], ['general', 'Tools & equipment', 'مفاتيح وعدة يدوية', 45, 4, 'cash'],
+      ['accident', 'Spare parts purchase', 'غطاء صدام من المورد', 28, 8, 'cash'], ['accident', 'Repairs & maintenance', 'غاز وسلك لحام', 12.5, 6, 'cash'],
+      ['paint', 'Paint & materials', 'دهان أبيض وأساس', 85, 7, 'card'], ['paint', 'Paint & materials', 'ورنيش وثنر', 32.4, 3, 'cash'], ['paint', 'Other', 'سنفرة ومعجون', 14.2, 2, 'cash'],
+      ['mech', 'Spare parts purchase', 'فحمات فرامل وفلاتر', 41.7, 5, 'cash'], ['mech', 'Other', 'مخزون زيت محرك', 56, 1, 'card'],
+      ['parts', 'Spare parts purchase', 'شراء قطع مستعملة من المزاد', 30, 9, 'transfer'], ['parts', 'Fuel & transport', 'نقل القطع', 8, 6, 'cash']
+    ];
+    var expenses = xs.map(function (x, i) {
+      return { id: 'demo-e' + (i + 1), date: day(-x[4]), section: x[0], type: x[1], desc: x[2], amount: x[3], method: x[5], note: '', createdBy: userName || '', demo: true };
+    });
+    return { customers: customers, invoices: invoices, quotes: quotes, expenses: expenses, counter: invoices.length, qcounter: quotes.length };
   }
 
   window.Demo = { build: build };

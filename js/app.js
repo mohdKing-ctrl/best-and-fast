@@ -5,8 +5,8 @@
   var current = 'new';
   var inited = false;
   var PREF_KEY = 'bf_pos_demo_pref';
-  var VIEWS = ['new', 'invoices', 'customers', 'services', 'reports', 'settings'];
-  var ADMIN_ONLY = { services: 1, reports: 1 };
+  var VIEWS = ['new', 'invoices', 'quotes', 'customers', 'services', 'expenses', 'reports', 'settings'];
+  var ADMIN_ONLY = { services: 1, reports: 1, expenses: 1 };
 
   function t(k, v) { return I18N.t(k, v); }
 
@@ -49,11 +49,11 @@
     VIEWS.forEach(function (v) { $('view-' + v).classList.toggle('active', v === view); });
     document.querySelectorAll('.navi button').forEach(function (b) { b.classList.toggle('active', b.dataset.view === view); });
     updateTitle();
-    var map = { new: NewInvoice, invoices: Invoices, customers: Customers, services: Services, reports: Reports, settings: Settings };
+    var map = { new: NewInvoice, invoices: Invoices, quotes: Quotes, customers: Customers, services: Services, expenses: Expenses, reports: Reports, settings: Settings };
     map[view].refresh();
     window.scrollTo(0, 0);
     // Another device may have added bills: pick up the newest data when these screens are opened.
-    if (Store.isServer() && (view === 'invoices' || view === 'customers' || view === 'reports')) {
+    if (Store.isServer() && (view === 'invoices' || view === 'quotes' || view === 'customers' || view === 'reports' || view === 'expenses')) {
       Store.reload().then(function () { if (current === view) { map[view].refresh(); updateBadge(); refreshDemoBar(); } }).catch(function () { /* keep showing what we have */ });
     }
   }
@@ -64,6 +64,8 @@
   function updateBadge() {
     var n = Store.s.invoices.filter(function (i) { return !i.void && i.kind !== 'parts' && i.job !== 'delivered'; }).length;
     $('navCount').textContent = n; $('navCount').style.display = n ? '' : 'none';
+    var q = Store.s.quotes.filter(function (x) { return Print.quoteState(x) === 'open'; }).length;      // quotations waiting for an answer
+    $('navQuotes').textContent = q; $('navQuotes').style.display = q ? '' : 'none';
   }
   function applyBranding() {
     var s = Store.s.settings;
@@ -87,6 +89,8 @@
   function refreshAll() {
     NewInvoice.refresh(); applyBranding(); updateBadge(); updateWho(); refreshDemoBar();
     if (current === 'invoices') Invoices.refresh();
+    if (current === 'quotes') Quotes.refresh();
+    if (current === 'expenses') Expenses.refresh();
     if (current === 'customers') Customers.refresh();
     if (current === 'services') Services.refresh();
     if (current === 'reports') Reports.refresh();
@@ -153,7 +157,7 @@
   function start() {
     $('gate').hidden = true;
     if (!inited) {
-      NewInvoice.init(); Invoices.init(); Customers.init(); Services.init(); Reports.init(); Settings.init(); Whatsapp.init();
+      NewInvoice.init(); Invoices.init(); Quotes.init(); Expenses.init(); Customers.init(); Services.init(); Reports.init(); Settings.init(); Whatsapp.init();
       inited = true;
     }
     NewInvoice.refresh(); applyBranding(); updateBadge(); updateWho(); refreshDemoBar();

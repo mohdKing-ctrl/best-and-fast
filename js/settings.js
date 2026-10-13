@@ -5,13 +5,13 @@
   var busy = false;
   function t(k, v) { return I18N.t(k, v); }
   var FIELDS = { name: 'stName', nameAr: 'stNameAr', addr: 'stAddr', addrAr: 'stAddrAr', phone: 'stPhone', email: 'stEmail', cr: 'stCr',
-    vatNo: 'stVatNo', prefix: 'stPrefix', footer: 'stFooter', terms: 'stTerms', bank: 'stBank' };
+    vatNo: 'stVatNo', prefix: 'stPrefix', quotePrefix: 'stQuotePrefix', footer: 'stFooter', terms: 'stTerms', bank: 'stBank' };
   var ROLE_CLASS = { admin: 'c-brand', cashier: 'c-mut', viewer: 'c-info' };
 
   function fill() {
     var s = Store.s.settings;
     Object.keys(FIELDS).forEach(function (k) { $(FIELDS[k]).value = s[k] || ''; });
-    $('stVatOn').checked = !!s.vatOn; $('stVatPct').value = s.vatPct; $('stPaper').value = s.paper || 'a4';
+    $('stQuoteDays').value = s.quoteDays || 14; $('stVatOn').checked = !!s.vatOn; $('stVatPct').value = s.vatPct; $('stPaper').value = s.paper || 'a4';
     var server = Store.isServer();
     var seeAll = Store.canSeeAll();
     $('stBizCard').style.display = seeAll ? '' : 'none';
@@ -54,6 +54,8 @@
     Object.keys(FIELDS).forEach(function (k) { d[k] = $(FIELDS[k]).value.trim(); });
     d.vatOn = $('stVatOn').checked; d.vatPct = num($('stVatPct').value); d.paper = $('stPaper').value;
     d.prefix = (d.prefix || 'INV').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'INV';
+    d.quotePrefix = (d.quotePrefix || 'QT').replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 8) || 'QT';
+    d.quoteDays = Math.max(1, Math.min(365, Math.round(num($('stQuoteDays').value)) || 14));
     if (!d.name) { toast(t('err_name'), 'bad'); return; }
     if (d.vatOn && !d.vatNo) { toast(t('err_vat_no'), 'bad'); return; }
     if (d.vatOn && !(d.vatPct > 0 && d.vatPct <= 100)) { toast(t('err_vat_pct'), 'bad'); return; }

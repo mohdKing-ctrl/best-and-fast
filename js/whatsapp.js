@@ -35,10 +35,10 @@
 
   /* ------------------------------------------------ the message */
   var TX = {
-    ar: { invoice: 'فاتورة رقم', date: 'التاريخ', customer: 'العميل', car: 'السيارة', plate: 'اللوحة', fault: 'العمل', status: 'حالة السيارة',
+    ar: { quote: 'رقم عرض السعر', valid: 'صالح حتى', invoice: 'فاتورة رقم', date: 'التاريخ', customer: 'العميل', car: 'السيارة', plate: 'اللوحة', fault: 'العمل', status: 'حالة السيارة',
       disc: 'الخصم', vat: 'الضريبة', total: 'الإجمالي', paid: 'المدفوع', balance: 'المتبقي', fullypaid: 'الفاتورة مدفوعة بالكامل ✅',
       link: 'لعرض الفاتورة كاملة', contact: 'للتواصل', thanks: 'شكراً لتعاملكم معنا', omr: 'ر.ع', voided: '⚠️ فاتورة ملغاة', more: 'بنود أخرى', due: 'موعد التسليم' },
-    en: { invoice: 'Invoice No', date: 'Date', customer: 'Customer', car: 'Car', plate: 'Plate', fault: 'Work', status: 'Car status',
+    en: { quote: 'Quotation No', valid: 'Valid until', invoice: 'Invoice No', date: 'Date', customer: 'Customer', car: 'Car', plate: 'Plate', fault: 'Work', status: 'Car status',
       disc: 'Discount', vat: 'VAT', total: 'Total', paid: 'Paid', balance: 'Balance due', fullypaid: 'Fully paid ✅',
       link: 'View the full invoice', contact: 'Contact', thanks: 'Thank you for your business', omr: 'OMR', voided: '⚠️ VOID invoice', more: 'more items', due: 'Expected delivery' }
   };
@@ -47,11 +47,11 @@
   function message(inv, lang, link, maxItems) {
     var s = Store.s.settings, x = TX[lang === 'en' ? 'en' : 'ar'], L = [];
     var shop = lang === 'en' ? (s.name || s.nameAr) : (s.nameAr || s.name);
-    var bal = Calc.balance(inv), paid = Calc.paid(inv);
+    var bal = Calc.balance(inv), paid = Calc.paid(inv), isQ = inv.kind === 'quote';
     var job = Print.JOBS[inv.job] || Print.JOBS.received;
     L.push('*' + shop + '*');
     if (inv.void) L.push(x.voided);
-    L.push(x.invoice + ': ' + inv.number);
+    L.push((isQ ? x.quote : x.invoice) + ': ' + inv.number);
     L.push(x.date + ': ' + fdate(inv.date));
     L.push(x.customer + ': ' + inv.customerName);
     if (inv.kind !== 'parts') {
@@ -69,9 +69,10 @@
     if (inv.discount > 0) L.push(x.disc + ': -' + f3(inv.discount));
     if (inv.vatPct > 0) L.push(x.vat + ' ' + inv.vatPct + '%: ' + f3(inv.vat));
     L.push('*' + x.total + ': ' + f3(inv.total) + ' ' + x.omr + '*');
-    L.push(x.paid + ': ' + f3(paid) + ' ' + x.omr);
-    if (!inv.void) L.push(bal > 0.0004 ? '*' + x.balance + ': ' + f3(bal) + ' ' + x.omr + '*' : x.fullypaid);
-    if (inv.kind !== 'parts' && !inv.void) {
+    if (!isQ) L.push(x.paid + ': ' + f3(paid) + ' ' + x.omr);
+    if (!inv.void && !isQ) L.push(bal > 0.0004 ? '*' + x.balance + ': ' + f3(bal) + ' ' + x.omr + '*' : x.fullypaid);
+    if (isQ) { if (inv.validUntil) L.push(x.valid + ': ' + fdate(inv.validUntil)); }
+    else if (inv.kind !== 'parts' && !inv.void) {
       L.push(x.status + ': ' + (lang === 'ar' ? job[1] : job[0]));
       if (inv.due && inv.job !== 'delivered') L.push(x.due + ': ' + fdate(inv.due));
     }
@@ -126,7 +127,7 @@
     if (linkOk && !token) {
       state = 'pending';
       var id = inv.id;
-      Store.shareInvoice(id).then(function (tk) {
+      Store.shareDoc(inv.kind === 'quote' ? 'quotes' : 'invoices', id).then(function (tk) {
         if (!cur || cur.id !== id) return;
         token = tk; state = 'ready'; rebuild();
       }).catch(function () {

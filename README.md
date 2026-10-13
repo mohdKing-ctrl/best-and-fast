@@ -6,6 +6,10 @@ and used spare parts. Arabic (default) and English, light and dark mode, phone a
 **No server, no login, no install.** Everything you do is saved in your own browser only and can be reset with
 *Reset demo* in the menu. It starts with example customers, bills and prices.
 
+## New in this demo (asked for by the customer)
+- **Quotations (عروض الأسعار)**: on *New Invoice* choose **Quotation** (cars from America, insurance companies). Its own numbers (QT-00001...), a *valid until* date, chassis / VIN and insurance claim numbers, no payment. Print it, send it on WhatsApp, follow its status (open / accepted / rejected / expired) in the *Quotations* page, and **turn an accepted one into a bill** with one button.
+- **Expenses (المصروفات)** per section (accident repair, painting, mechanical, used parts, other + General): add, edit, delete, filter, Excel. The *Reports* page now shows **income, expenses and net for every section**.
+
 ## What you can try
 - Make a bill for a car (plate, car, fault, services and parts) or a plain spare-parts sale; part payments and credit.
 - Move a car through the stages: Received -> In repair -> Ready for pickup -> Delivered.

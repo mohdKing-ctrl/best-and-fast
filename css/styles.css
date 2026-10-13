@@ -457,3 +457,12 @@ html{scrollbar-color:var(--faint) var(--bg)}
 .wlimit b{font-size:20px;font-variant-numeric:tabular-nums;direction:ltr}
 /* worker accounts switched off by the system provider: the list is shown, nothing can be added or removed */
 .locked #usForm,.locked #usList .acts{display:none !important}
+
+/* ---------- quotations + expenses (added for the demo) ---------- */
+#qtReset,#exReset{border:1.5px solid var(--line);font-weight:800}
+#qtReset.hasfilter,#exReset.hasfilter{background:var(--goldsoft);color:var(--goldtxt);border-color:var(--gold)}
+.profit th,.profit td{text-align:end;white-space:nowrap}
+.profit th:first-child,.profit td:first-child{text-align:start}
+.profit tfoot td{border-top:2px solid var(--line);background:var(--surface2)}
+#view-expenses .toolbar .tbtn.b-main{box-shadow:none}
+.viewonly #qtNew,.viewonly #exAdd,.viewonly #exBody [data-act=edit],.viewonly #exBody [data-act=del]{display:none !important}

@@ -40,8 +40,21 @@
   /* What kind of bill: a workshop job on a customer's vehicle, or a plain sale of used parts. */
   var KINDS = [
     { id: 'repair', en: 'Workshop job', ar: 'أعمال الورشة' },
-    { id: 'parts',  en: 'Spare parts sale', ar: 'بيع قطع غيار' }
+    { id: 'parts',  en: 'Spare parts sale', ar: 'بيع قطع غيار' },
+    { id: 'quote',  en: 'Quotation', ar: 'عرض أسعار' }
   ];
+
+  /* A quotation is not a bill: nothing is paid on it. It is open, then accepted (and turned into a bill) or rejected. */
+  var QUOTE_STATUS = ['open', 'accepted', 'rejected'];
+
+  /* Expenses are kept per section; "General" is for costs that belong to the whole garage (rent, electricity ...). */
+  var GENERAL = { id: 'general', en: 'General (whole garage)', ar: 'عام (للورشة كلها)', ic: '🏢' };
+  var EXPENSE_TYPES = [
+    ['Spare parts purchase', 'شراء قطع غيار'], ['Paint & materials', 'دهانات ومواد'], ['Workers wages', 'أجور العمال'],
+    ['Rent', 'إيجار'], ['Electricity & water', 'كهرباء وماء'], ['Tools & equipment', 'أدوات ومعدات'],
+    ['Fuel & transport', 'وقود ونقل'], ['Repairs & maintenance', 'صيانة وإصلاحات'], ['Other', 'أخرى']
+  ];
+  function expSections() { return CATS.concat([GENERAL]); }
 
   /* Stages of a workshop job, in order. */
   var JOBS = ['received', 'repair', 'ready', 'delivered'];
@@ -61,7 +74,7 @@
       addrAr: 'ولاية سمائل - الصناعية هصاص - سلطنة عمان',
       phone: '97230444', email: 'en.abujihad@gmail.com',
       cr: '1368308', vatNo: '', vatOn: false, vatPct: 5,
-      prefix: 'INV', paper: 'a4',
+      prefix: 'INV', quotePrefix: 'QT', quoteDays: 14, paper: 'a4',
       lang: 'ar', theme: 'light',
       footer: 'Thank you for your business  |  شكراً لتعاملكم معنا',
       customCats: [], customUnits: [],
@@ -137,7 +150,8 @@
   }
 
   window.Catalog = {
-    CATS: CATS, UNITS: UNITS, KINDS: KINDS, JOBS: JOBS, MAKES: MAKES,
+    CATS: CATS, UNITS: UNITS, KINDS: KINDS, JOBS: JOBS, MAKES: MAKES, QUOTE_STATUS: QUOTE_STATUS, EXPENSE_TYPES: EXPENSE_TYPES, GENERAL: GENERAL, expSections: expSections,
+    expSection: function (id) { return expSections().filter(function (c) { return c.id === id; })[0] || GENERAL; },
     defaultSettings: defaultSettings, defaultServices: defaultServices,
     setCustom: setCustom,
     cat: function (id) { return CATS.filter(function (c) { return c.id === id; })[0] || CATS.filter(function (c) { return c.id === 'other'; })[0]; },

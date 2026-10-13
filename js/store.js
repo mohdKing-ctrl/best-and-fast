@@ -5,19 +5,21 @@
      local   -> this browser's localStorage. Used only when there is no PHP (opening the files
                 from a folder, or a plain static host). It is only a safety net: the real site always uses the server.
    The rest of the app never needs to know which one is active.
-   Every write returns a Promise, so a failure always reaches the screen as a message.   */
+   Every write returns a Promise, so a failure always reaches the screen as a message.
+
+   DEMO BUILD: there is no server, everything lives in this browser (local back end only).   */
 (function () {
   'use strict';
 
   var API = 'api/index.php';
-  var LS_KEY = 'bf_pos_demo_db_v1';
+  var LS_KEY = 'bf_pos_demo_db_v2';
 
   var S = {
     mode: 'local',            // 'server' | 'local'
     user: null,               // {id, username, name, role}
     settings: Catalog.defaultSettings(),
-    services: [], customers: [], invoices: [],
-    counter: 0,
+    services: [], customers: [], invoices: [], quotes: [], expenses: [],
+    counter: 0, qcounter: 0,
     features: {}              // optional features the system provider has switched on (from the server)
   };
   var hooks = { authLost: null };      // app.js sets hooks.authLost: called when the login has expired
@@ -54,16 +56,18 @@
   function localSave() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({
-        settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, counter: S.counter
+        settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses,
+        counter: S.counter, qcounter: S.qcounter
       }));
     } catch (e) { throw err('storage_full'); }
   }
   /* Run a browser-storage change; any failure (e.g. browser storage full) becomes a rejected Promise, never a crash. */
   function localOp(fn) {
-    var snap = { settings: S.settings, services: S.services.slice(), customers: S.customers.slice(), invoices: S.invoices.slice(), counter: S.counter };
+    var snap = { settings: S.settings, services: S.services.slice(), customers: S.customers.slice(), invoices: S.invoices.slice(), quotes: S.quotes.slice(), expenses: S.expenses.slice(), counter: S.counter, qcounter: S.qcounter };
     try { return Promise.resolve(fn()); }
     catch (e) {                                   // nothing is half-applied: put everything back as it was
-      S.settings = snap.settings; S.services = snap.services; S.customers = snap.customers; S.invoices = snap.invoices; S.counter = snap.counter;
+      S.settings = snap.settings; S.services = snap.services; S.customers = snap.customers; S.invoices = snap.invoices;
+      S.quotes = snap.quotes; S.expenses = snap.expenses; S.counter = snap.counter; S.qcounter = snap.qcounter;
       Catalog.setCustom(S.settings);
       return Promise.reject(e);
     }
@@ -76,24 +80,22 @@
     if (d && d.settings) { adopt(d); return; }
     seedEmpty();
   }
-  /* A brand-new system: the price list plus the example customers and bills. */
+  /* A brand-new system: the price list plus the example customers, bills, quotations and expenses. */
   function starter() {
     var s = Catalog.defaultSettings();
     var demo = Demo.build(s, S.user ? S.user.name : '');
-    return { settings: s, services: Catalog.defaultServices(), customers: demo.customers, invoices: demo.invoices, counter: demo.counter };
+    return { settings: s, services: Catalog.defaultServices(), customers: demo.customers, invoices: demo.invoices, quotes: demo.quotes, expenses: demo.expenses,
+      counter: demo.counter, qcounter: demo.qcounter };
   }
-  function seedEmpty() {
-    var d = starter();
-    S.settings = d.settings; Catalog.setCustom(S.settings);
-    S.services = d.services; S.customers = d.customers; S.invoices = d.invoices; S.counter = d.counter;
-  }
+  function seedEmpty() { adopt(starter()); }
   function adopt(d) {
     S.settings = Object.assign(Catalog.defaultSettings(), d.settings || {}); Catalog.setCustom(S.settings);
     var l = fixLists(d);
-    S.services = l.services; S.customers = l.customers; S.invoices = l.invoices;
-    S.counter = d.counter || 0;
+    S.services = l.services; S.customers = l.customers; S.invoices = l.invoices; S.quotes = l.quotes; S.expenses = l.expenses;
+    S.counter = d.counter || 0; S.qcounter = d.qcounter || 0;
   }
   function pad(n) { return (S.settings.prefix || 'INV') + '-' + String(n).padStart(5, '0'); }
+  function qpad(n) { return (S.settings.quotePrefix || 'QT') + '-' + String(n).padStart(5, '0'); }
   function upsert(list, doc) {
     var i = -1; list.forEach(function (x, k) { if (x.id === doc.id) i = k; });
     if (i >= 0) list[i] = doc; else list.push(doc);
@@ -108,7 +110,7 @@
      incomplete record (a missing name, a missing list...) can never break a whole screen. */
   var str = function (v) { return v === null || v === undefined ? '' : String(v); };
   var nz = function (v) { var n = Number(v); return isFinite(n) ? n : 0; };
-  function fixInvoice(i) {
+  function fixLines(i) {
     i.id = str(i.id); i.no = nz(i.no); i.number = str(i.number);
     i.items = (Array.isArray(i.items) ? i.items : []).map(function (it) {
       it = it || {};
@@ -117,14 +119,30 @@
     });
     i.payments = (Array.isArray(i.payments) ? i.payments : []).filter(function (p) { return p && nz(p.amount) > 0; })
       .map(function (p) { p.amount = nz(p.amount); p.method = str(p.method) || 'cash'; p.date = str(p.date); return p; });
-    ['customerName', 'customerPhone', 'customerVat', 'customerAddr', 'plate', 'car', 'color', 'km', 'due', 'fault', 'note', 'date', 'time', 'shareToken'].forEach(function (k) { i[k] = str(i[k]); });
+    ['customerName', 'customerPhone', 'customerVat', 'customerAddr', 'plate', 'car', 'color', 'km', 'vin', 'claim', 'due', 'validUntil', 'fault', 'note', 'date', 'time', 'shareToken', 'convertedTo'].forEach(function (k) { i[k] = str(i[k]); });
     ['total', 'discount', 'vat', 'behalf', 'vatPct'].forEach(function (k) { i[k] = nz(i[k]); });
     i.office = i.office === undefined || i.office === null ? Math.max(0, nz(i.total) - i.vat - i.behalf + i.discount) : nz(i.office);
-    if (Catalog.JOBS.indexOf(i.job) === -1) i.job = 'received';
-    if (['repair', 'parts'].indexOf(i.kind) === -1) i.kind = 'repair';
     i.void = !!i.void;
     if (i.demo) i.demo = true; else delete i.demo;
     return i;
+  }
+  function fixInvoice(i) {
+    fixLines(i);
+    if (Catalog.JOBS.indexOf(i.job) === -1) i.job = 'received';
+    if (['repair', 'parts'].indexOf(i.kind) === -1) i.kind = 'repair';
+    return i;
+  }
+  function fixQuote(q) {
+    fixLines(q);
+    q.kind = 'quote'; q.payments = [];
+    if (Catalog.QUOTE_STATUS.indexOf(q.status) === -1) q.status = 'open';
+    return q;
+  }
+  function fixExpense(x) {
+    x.id = str(x.id); x.date = str(x.date); x.section = str(x.section) || 'general'; x.type = str(x.type); x.desc = str(x.desc);
+    x.amount = nz(x.amount); x.method = str(x.method) || 'cash'; x.note = str(x.note); x.createdBy = str(x.createdBy);
+    if (x.demo) x.demo = true; else delete x.demo;
+    return x;
   }
   function fixCustomer(c) {
     c.id = str(c.id); c.name = str(c.name); c.phone = str(c.phone); c.vatNo = str(c.vatNo); c.addr = str(c.addr); c.notes = str(c.notes);
@@ -136,11 +154,14 @@
     return {
       services: (d.services || []).filter(Boolean).map(fixService),
       customers: (d.customers || []).filter(Boolean).map(fixCustomer),
-      invoices: (d.invoices || []).filter(Boolean).map(fixInvoice)
+      invoices: (d.invoices || []).filter(Boolean).map(fixInvoice),
+      quotes: (d.quotes || []).filter(Boolean).map(fixQuote),
+      expenses: (d.expenses || []).filter(Boolean).map(fixExpense)
     };
   }
   function hasDemo() {
-    return S.customers.some(function (c) { return c.demo; }) || S.invoices.some(function (i) { return i.demo; });
+    return S.customers.some(function (c) { return c.demo; }) || S.invoices.some(function (i) { return i.demo; }) ||
+      S.quotes.some(function (q) { return q.demo; }) || S.expenses.some(function (x) { return x.demo; });
   }
 
   /* ------------------------------------------------ boot / auth */
@@ -152,48 +173,27 @@
     localLoad();
     return Promise.resolve('ready');
   }
-  function bootWithServer() {
-    return call('status').then(function (st) {
-      S.mode = 'server';
-      if (st.setup_needed) return 'setup';
-      if (!st.user) return 'login';
-      S.user = st.user;
-      return loadServer().then(function () { return 'ready'; });
-    }, function (e) {
-      // Browser-only storage is allowed ONLY when the files are opened from a folder / on this computer.
-      // On a real website address a missing or broken server must be a loud error, never a quiet fallback.
-      var local = location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname);
-      if (local && (e.code === 'no_api' || e.code === 'network')) {
-        S.mode = 'local';
-        S.user = { id: 0, username: 'local', name: 'Local', role: 'admin' };
-        localLoad();
-        return 'ready';
-      }
-      throw e;
-    });
-  }
   function loadServer() {
     return call('load').then(function (d) {
       S.user = d.user;
       S.settings = Object.assign(Catalog.defaultSettings(), d.settings || {}); Catalog.setCustom(S.settings);
       var l = fixLists(d);
-      S.services = l.services; S.customers = l.customers; S.invoices = l.invoices;
-      S.counter = d.counter || 0;
+      S.services = l.services; S.customers = l.customers; S.invoices = l.invoices; S.quotes = l.quotes; S.expenses = l.expenses;
+      S.counter = d.counter || 0; S.qcounter = d.qcounter || 0;
       S.features = d.features || {};
-      // A brand-new server install starts with the price list and the example customers / bills
-      // (only the owner can write them; the owner removes the examples from Settings).
+      // A brand-new server install starts with the price list and the example data
+      // (only the owner can write them; the owner removes the examples from the notice at the top).
       if (!d.settings) {
         var st = starter();
-        S.settings = st.settings; Catalog.setCustom(S.settings);
-        S.services = st.services; S.customers = st.customers; S.invoices = st.invoices; S.counter = st.counter;
+        adopt(st);
         if (d.user && d.user.role === 'admin') {
-          return call('restore', { data: { settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, counter: S.counter } })
+          return call('restore', { data: { settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, counter: S.counter, qcounter: S.qcounter } })
             .then(function () { return call('load'); }).then(function (again) {
               var l2 = fixLists(again);
-              S.customers = l2.customers; S.invoices = l2.invoices; S.counter = again.counter || 0;
+              S.customers = l2.customers; S.invoices = l2.invoices; S.quotes = l2.quotes; S.expenses = l2.expenses; S.counter = again.counter || 0; S.qcounter = again.qcounter || 0;
             });
         }
-        S.customers = []; S.invoices = []; S.counter = 0;
+        S.customers = []; S.invoices = []; S.quotes = []; S.expenses = []; S.counter = 0; S.qcounter = 0;
       }
     });
   }
@@ -271,13 +271,59 @@
     if (isServer()) return call('put', { col: 'invoices', doc: inv }).then(function (r) { var d = fixInvoice(r.doc); upsert(S.invoices, d); return d; });
     return localOp(function () { upsert(S.invoices, inv); localSave(); return inv; });
   }
-  /* The secret link the customer opens on his phone (server only). Returns the token. */
-  function shareInvoice(id) {
-    var inv = invoiceById(id);
-    if (inv && inv.shareToken) return Promise.resolve(inv.shareToken);
+
+  /* ---- quotations (عروض الأسعار): numbered QT-00001..., nothing is paid on them ---- */
+  function createQuote(q) {
+    var ro = readOnly(); if (ro) return ro;
+    if (isServer()) {
+      return call('create_quote', { doc: q }).then(function (r) {
+        var doc = fixQuote(r.doc);
+        if (!S.quotes.some(function (x) { return x.id === doc.id; })) S.quotes.push(doc);
+        S.qcounter = r.qcounter; return doc;
+      });
+    }
+    return localOp(function () {
+      delete q.clientKey;
+      var n = S.qcounter + 1;
+      q.no = n; q.id = String(n); q.number = qpad(n); q.kind = 'quote'; q.status = 'open'; q.payments = [];
+      q.created = Math.floor(Date.now() / 1000); q.createdBy = S.user ? S.user.name : '';
+      S.quotes.push(q); S.qcounter = n;
+      try { localSave(); } catch (e) { S.quotes.pop(); S.qcounter = n - 1; throw e; }
+      return q;
+    });
+  }
+  function updateQuote(q) {
+    var ro = readOnly(); if (ro) return ro;
+    if (isServer()) return call('put', { col: 'quotes', doc: q }).then(function (r) { var d = fixQuote(r.doc); upsert(S.quotes, d); return d; });
+    return localOp(function () { upsert(S.quotes, q); localSave(); return q; });
+  }
+  function removeQuote(id) {
+    var ro = readOnly(); if (ro) return ro;
+    var drop = function () { S.quotes = S.quotes.filter(function (x) { return x.id !== id; }); };
+    if (isServer()) return call('del', { col: 'quotes', id: id }).then(drop);
+    return localOp(function () { drop(); localSave(); });
+  }
+
+  /* ---- expenses (المصروفات): the owner's costs, per section ---- */
+  function saveExpense(x) {
+    var ro = readOnly(); if (ro) return ro;
+    if (isServer()) return call('put', { col: 'expenses', doc: x }).then(function (r) { var d = fixExpense(r.doc); upsert(S.expenses, d); return d; });
+    return localOp(function () { upsert(S.expenses, x); localSave(); return x; });
+  }
+  function removeExpense(id) {
+    var ro = readOnly(); if (ro) return ro;
+    var drop = function () { S.expenses = S.expenses.filter(function (x) { return x.id !== id; }); };
+    if (isServer()) return call('del', { col: 'expenses', id: id }).then(drop);
+    return localOp(function () { drop(); localSave(); });
+  }
+
+  /* The secret link the customer opens on his phone (server only). col = 'invoices' | 'quotes'. Returns the token. */
+  function shareDoc(col, id) {
+    var doc = (col === 'quotes' ? S.quotes : S.invoices).filter(function (i) { return i.id === id; })[0];
+    if (doc && doc.shareToken) return Promise.resolve(doc.shareToken);
     var ro = readOnly(); if (ro) return ro;
     if (!isServer()) return Promise.reject(err('no_api'));
-    return call('share_invoice', { id: id }).then(function (r) { if (inv) inv.shareToken = r.token; return r.token; });
+    return call('share_invoice', { id: id, col: col }).then(function (r) { if (doc) doc.shareToken = r.token; return r.token; });
   }
 
   /* Permanently delete bills. Numbers are never re-used: the counter is left as it is. */
@@ -289,31 +335,34 @@
     return localOp(function () { drop(); localSave(); });
   }
 
-  /* Remove only the example customers and bills. Real work is never touched. */
+  /* Remove only the example customers, bills, quotations and expenses. Real work is never touched. */
   function removeDemo() {
     var ro = readOnly(); if (ro) return ro;
     var drop = function () {
       S.customers = S.customers.filter(function (c) { return !c.demo; });
       S.invoices = S.invoices.filter(function (i) { return !i.demo; });
+      S.quotes = S.quotes.filter(function (q) { return !q.demo; });
+      S.expenses = S.expenses.filter(function (x) { return !x.demo; });
     };
     if (isServer()) {
-      return call('demo_remove', {}).then(function (r) { drop(); S.counter = r.counter; });
+      return call('demo_remove', {}).then(function (r) { drop(); S.counter = r.counter; S.qcounter = r.qcounter; });
     }
-    return localOp(function () { drop(); if (!S.invoices.length) S.counter = 0; localSave(); });
+    return localOp(function () { drop(); if (!S.invoices.length) S.counter = 0; if (!S.quotes.length) S.qcounter = 0; localSave(); });
   }
 
   /* ------------------------------------------------ whole database */
   function exportAll() {
-    return { app: 'best-and-fast-pos', version: 1, exported: new Date().toISOString(),
-      settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, counter: S.counter };
+    return { app: 'best-and-fast-pos', version: 2, exported: new Date().toISOString(),
+      settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, counter: S.counter, qcounter: S.qcounter };
   }
   function restore(data) {
     var ro = readOnly(); if (ro) return ro;
     if (!data || !Array.isArray(data.invoices)) return Promise.reject(err('bad_backup'));
     var payload = {
       settings: Object.assign(Catalog.defaultSettings(), data.settings || {}),
-      services: data.services || [], customers: data.customers || [], invoices: data.invoices || [],
-      counter: Math.max(data.counter || 0, data.invoices.reduce(function (m, i) { return Math.max(m, i.no || 0); }, 0))
+      services: data.services || [], customers: data.customers || [], invoices: data.invoices || [], quotes: data.quotes || [], expenses: data.expenses || [],
+      counter: Math.max(data.counter || 0, data.invoices.reduce(function (m, i) { return Math.max(m, i.no || 0); }, 0)),
+      qcounter: Math.max(data.qcounter || 0, (data.quotes || []).reduce(function (m, i) { return Math.max(m, i.no || 0); }, 0))
     };
     if (isServer()) return call('restore', { data: payload }).then(function () { adopt(payload); });
     return localOp(function () { adopt(payload); localSave(); });
@@ -323,10 +372,10 @@
     var settings = S.settings;
     if (isServer()) {
       return call('reset', { resetCounter: !!resetCounter }).then(function () {
-        return call('restore', { data: { settings: settings, services: S.services, customers: [], invoices: [], counter: resetCounter ? 0 : S.counter } });
-      }).then(function () { S.customers = []; S.invoices = []; if (resetCounter) S.counter = 0; });
+        return call('restore', { data: { settings: settings, services: S.services, customers: [], invoices: [], quotes: [], expenses: S.expenses, counter: resetCounter ? 0 : S.counter, qcounter: resetCounter ? 0 : S.qcounter } });
+      }).then(function () { S.customers = []; S.invoices = []; S.quotes = []; if (resetCounter) { S.counter = 0; S.qcounter = 0; } });
     }
-    return localOp(function () { S.customers = []; S.invoices = []; if (resetCounter) S.counter = 0; localSave(); });
+    return localOp(function () { S.customers = []; S.invoices = []; S.quotes = []; if (resetCounter) { S.counter = 0; S.qcounter = 0; } localSave(); });
   }
 
   /* ------------------------------------------------ worker accounts (server only) */
@@ -347,11 +396,16 @@
     boot: boot, reload: reload, login: login, setup: setup, logout: logout,
     saveSettings: saveSettings, saveService: saveService, removeService: removeService, replaceServices: replaceServices,
     saveCustomer: saveCustomer, removeCustomer: removeCustomer,
-    createInvoice: createInvoice, updateInvoice: updateInvoice, removeInvoices: removeInvoices, shareInvoice: shareInvoice,
+    createInvoice: createInvoice, updateInvoice: updateInvoice, removeInvoices: removeInvoices,
+    createQuote: createQuote, updateQuote: updateQuote, removeQuote: removeQuote,
+    saveExpense: saveExpense, removeExpense: removeExpense,
+    shareDoc: shareDoc, shareInvoice: function (id) { return shareDoc('invoices', id); },
     removeDemo: removeDemo, hasDemo: hasDemo,
     exportAll: exportAll, restore: restore, wipe: wipe,
     users: users, health: health, addUser: addUser, delUser: delUser, setPassword: setPassword,
     invoiceById: invoiceById,
+    quoteById: function (id) { return S.quotes.filter(function (i) { return i.id === id; })[0]; },
+    expenseById: function (id) { return S.expenses.filter(function (i) { return i.id === id; })[0]; },
     serviceById: function (id) { return S.services.filter(function (i) { return i.id === id; })[0]; },
     customerById: function (id) { return S.customers.filter(function (i) { return i.id === id; })[0]; }
   };

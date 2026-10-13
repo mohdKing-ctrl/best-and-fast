@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=24c0f44f">
+<link rel="stylesheet" href="css/styles.css?v=27cdf817">
 <link rel="stylesheet" href="css/invoice.css?v=6c3ca58b">
 <style id="pageStyle"></style>
 </head>
@@ -64,8 +64,10 @@
   <nav class="navi" id="nav">
     <button data-view="new" class="active"><span class="ic">&#10133;</span> <span data-i18n="nav_new"></span></button>
     <button data-view="invoices"><span class="ic">&#128220;</span> <span data-i18n="nav_invoices"></span> <span class="badge" id="navCount">0</span></button>
+    <button data-view="quotes"><span class="ic">&#128221;</span> <span data-i18n="nav_quotes"></span> <span class="badge" id="navQuotes" style="display:none">0</span></button>
     <button data-view="customers"><span class="ic">&#128101;</span> <span data-i18n="nav_customers"></span></button>
     <button data-view="services"><span class="ic">&#127991;</span> <span data-i18n="nav_services"></span></button>
+    <button data-view="expenses"><span class="ic">&#128184;</span> <span data-i18n="nav_expenses"></span></button>
     <button data-view="reports"><span class="ic">&#128202;</span> <span data-i18n="nav_reports"></span></button>
     <button data-view="settings"><span class="ic">&#9881;</span> <span data-i18n="nav_settings"></span></button>
   </nav>
@@ -95,7 +97,7 @@
     <div class="pos">
       <div>
         <div class="card">
-          <div class="chead"><h3><span class="step">1</span> <span data-i18n="step_customer"></span></h3><span class="chip c-mut" id="nvNo"></span></div>
+          <div class="chead"><h3><span class="step">1</span> <span data-i18n="step_customer"></span></h3><span class="chip c-gold" id="nvFromQ" hidden></span> <span class="chip c-mut" id="nvNo"></span></div>
           <div class="fields">
             <div class="fld"><label data-i18n="customer_name"></label><input id="nvName" autocomplete="off" data-i18n-ph="walk_in"></div>
             <div class="fld"><label data-i18n="phone"></label><input id="nvPhone" class="ltr-in" inputmode="tel" placeholder="9xxx xxxx" dir="ltr" style="text-align:start"></div>
@@ -112,12 +114,15 @@
           <div class="fields">
             <div class="fld"><label data-i18n="date"></label><input type="date" id="nvDate"></div>
             <div class="fld" id="nvDueWrap"><label data-i18n="due_date"></label><input type="date" id="nvDue"></div>
+            <div class="fld" id="nvValidWrap" style="display:none"><label data-i18n="valid_until"></label><input type="date" id="nvValid"></div>
           </div>
           <div class="fields" id="nvVehBox" style="margin-top:11px">
             <div class="fld"><label data-i18n="plate_no"></label><input id="nvPlate" dir="ltr" style="text-align:start" autocomplete="off" placeholder="1234 AB"></div>
             <div class="fld"><label data-i18n="car"></label><input id="nvCar" autocomplete="off" data-i18n-ph="car_ph"></div>
             <div class="fld"><label data-i18n="color"></label><input id="nvColor" autocomplete="off"></div>
             <div class="fld"><label data-i18n="mileage"></label><input id="nvKm" inputmode="numeric" dir="ltr" style="text-align:start" autocomplete="off" placeholder="km"></div>
+            <div class="fld"><label data-i18n="vin"></label><input id="nvVin" dir="ltr" style="text-align:start" autocomplete="off"></div>
+            <div class="fld"><label data-i18n="claim"></label><input id="nvClaim" dir="ltr" style="text-align:start" autocomplete="off"></div>
             <div class="fld full"><label data-i18n="fault"></label><input id="nvFault" autocomplete="off" data-i18n-ph="fault_ph"></div>
           </div>
         </div>
@@ -132,7 +137,7 @@
 
       <div class="panel">
         <div class="card">
-          <div class="chead"><h3><span class="step">3</span> <span data-i18n="step_invoice"></span></h3></div>
+          <div class="chead"><h3><span class="step">3</span> <span id="nvStep3" data-i18n="step_invoice"></span></h3></div>
           <div class="cartbox" id="nvCart"></div>
 
           <div class="sums">
@@ -142,6 +147,7 @@
             <div class="sr grand"><span data-i18n="total"></span><b id="nvTotal">0.000</b></div>
           </div>
 
+          <div id="nvPayBlock">
           <div class="paybox">
             <div class="fld"><label data-i18n="pay_method"></label>
               <select id="nvPay"><option value="cash" data-i18n="pay_cash"></option><option value="card" data-i18n="pay_card"></option><option value="transfer" data-i18n="pay_transfer"></option><option value="cheque" data-i18n="pay_cheque"></option></select></div>
@@ -149,11 +155,12 @@
           </div>
           <div class="quick"><button type="button" id="nvPayFull" data-i18n="pay_full"></button><button type="button" id="nvPayNone" data-i18n="pay_credit"></button></div>
           <div class="balance" id="nvBalance"></div>
+          </div>
 
           <div class="fld" style="margin-top:12px"><label data-i18n="note"></label><input id="nvNote" data-i18n-ph="note_ph"></div>
 
-          <button class="btn b-main" id="nvSave" type="button">&#10004; <span data-i18n="save_print"></span></button>
-          <button class="btn b-wa" id="nvSaveWa" type="button"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span data-i18n="save_whatsapp"></span></button>
+          <button class="btn b-main" id="nvSave" type="button">&#10004; <span id="nvSaveTxt" data-i18n="save_print"></span></button>
+          <button class="btn b-wa" id="nvSaveWa" type="button"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span id="nvSaveWaTxt" data-i18n="save_whatsapp"></span></button>
           <div class="duo">
             <button class="btn b-soft" id="nvSaveOnly" type="button" data-i18n="save_only"></button>
             <button class="btn b-soft" id="nvClear" type="button" data-i18n="clear"></button>
@@ -190,6 +197,22 @@
     </table></div></div>
   </div>
 
+  <!-- ============ QUOTATIONS ============ -->
+  <div id="view-quotes" class="page">
+    <div class="stats" id="qtStats"></div>
+    <div class="toolbar">
+      <div class="search"><span class="mg">&#128269;</span><input id="qtSearch" data-i18n-ph="search_quotes" autocomplete="off"></div>
+      <select id="qtStatus"><option value="" data-i18n="all_statuses"></option><option value="open" data-i18n="qs_open"></option><option value="accepted" data-i18n="qs_accepted"></option><option value="rejected" data-i18n="qs_rejected"></option><option value="expired" data-i18n="qs_expired"></option></select>
+      <button class="tbtn b-soft" id="qtReset" type="button">&#10006; <span data-i18n="clear_filters"></span></button>
+      <span class="grow"></span>
+      <button class="tbtn b-ok" id="qtNew" type="button">&#10133; <span data-i18n="new_quote"></span></button>
+    </div>
+    <div class="tblcard"><div class="tblwrap"><table class="rtable">
+      <thead><tr><th data-i18n="quote_no"></th><th data-i18n="date"></th><th data-i18n="customer"></th><th data-i18n="vehicle"></th><th data-i18n="total"></th><th data-i18n="valid_until"></th><th data-i18n="status"></th><th></th></tr></thead>
+      <tbody id="qtBody"></tbody>
+    </table></div></div>
+  </div>
+
   <!-- ============ CUSTOMERS ============ -->
   <div id="view-customers" class="page">
     <div class="stats" id="cuStats"></div>
@@ -223,6 +246,26 @@
     </div>
   </div>
 
+  <!-- ============ EXPENSES ============ -->
+  <div id="view-expenses" class="page">
+    <div class="card" style="margin-bottom:18px"><p class="hint" style="margin:0" data-i18n="expenses_hint"></p></div>
+    <div class="stats" id="exStats"></div>
+    <div class="toolbar">
+      <div class="search"><span class="mg">&#128269;</span><input id="exSearch" data-i18n-ph="search_expenses" autocomplete="off"></div>
+      <select id="exSection"></select>
+      <input type="date" id="exFrom" aria-label="from"><input type="date" id="exTo" aria-label="to">
+      <button class="tbtn b-soft" id="exReset" type="button">&#10006; <span data-i18n="clear_filters"></span></button>
+      <span class="grow"></span>
+      <button class="tbtn b-ok" id="exExport" type="button">&#128202; <span data-i18n="export_excel"></span></button>
+      <button class="tbtn b-main" style="margin-top:0" id="exAdd" type="button">&#10133; <span data-i18n="add_expense"></span></button>
+    </div>
+    <div class="card" style="margin-bottom:18px"><div class="chead"><h3 data-i18n="x_by_section"></h3></div><div id="exBars"></div></div>
+    <div class="tblcard"><div class="tblwrap"><table class="rtable">
+      <thead><tr><th data-i18n="date"></th><th data-i18n="category"></th><th data-i18n="expense_type"></th><th data-i18n="description"></th><th data-i18n="pay_method"></th><th data-i18n="amount"></th><th></th></tr></thead>
+      <tbody id="exBody"></tbody>
+    </table></div></div>
+  </div>
+
   <!-- ============ REPORTS ============ -->
   <div id="view-reports" class="page">
     <div class="toolbar">
@@ -246,6 +289,7 @@
       <div class="card"><div class="chead"><h3 data-i18n="r_by_worker"></h3></div><div id="rpWorkers"></div></div>
       <div class="card"><div class="chead"><h3 data-i18n="r_by_stage"></h3></div><div id="rpStages"></div></div>
     </div>
+    <div class="card" style="margin-top:18px"><div class="chead"><h3 data-i18n="r_profit_by_section"></h3></div><div class="tblwrap" id="rpProfit"></div></div>
   </div>
 
   <!-- ============ SETTINGS ============ -->
@@ -277,6 +321,8 @@
         <div class="fld"><label data-i18n="email"></label><input id="stEmail" dir="ltr" style="text-align:start"></div>
         <div class="fld"><label data-i18n="st_cr"></label><input id="stCr" dir="ltr" style="text-align:start"></div>
         <div class="fld"><label data-i18n="st_invoice_prefix"></label><input id="stPrefix" dir="ltr" style="text-align:start" maxlength="8"></div>
+        <div class="fld"><label data-i18n="st_quote_prefix"></label><input id="stQuotePrefix" dir="ltr" style="text-align:start" maxlength="8"></div>
+        <div class="fld"><label data-i18n="st_quote_days"></label><input id="stQuoteDays" type="number" min="1" max="365" step="1"></div>
         <div class="fld"><label data-i18n="st_paper"></label><select id="stPaper"><option value="a4" data-i18n="paper_a4"></option><option value="80" data-i18n="paper_80"></option></select></div>
         <div class="fld"><label data-i18n="st_bank"></label><input id="stBank"></div>
         <div class="fld" style="grid-column:1/-1"><label data-i18n="st_footer"></label><input id="stFooter"></div>
@@ -421,26 +467,45 @@
   <button class="btn b-soft" type="button" data-close style="margin-top:16px" data-i18n="close"></button>
 </div></div>
 
+<div class="modal" id="qtModal" hidden><div class="mbox wide" id="qtBox"></div></div>
+
+<div class="modal" id="exModal" hidden><div class="mbox">
+  <h3 id="exmTitle"></h3><div class="msub" data-i18n="expense_hint"></div>
+  <div class="fields">
+    <div class="fld"><label data-i18n="date"></label><input type="date" id="exmDate"></div>
+    <div class="fld"><label data-i18n="category"></label><select id="exmSection"></select></div>
+    <div class="fld"><label data-i18n="expense_type"></label><input id="exmType" autocomplete="off" data-i18n-ph="expense_type_ph"></div>
+    <div class="fld"><label data-i18n="amount_omr"></label><input type="number" id="exmAmount" step="0.001" min="0" placeholder="0.000"></div>
+    <div class="fld full"><label data-i18n="description"></label><input id="exmDesc" autocomplete="off" data-i18n-ph="expense_desc_ph"></div>
+    <div class="fld"><label data-i18n="pay_method"></label><select id="exmMethod"><option value="cash" data-i18n="pay_cash"></option><option value="card" data-i18n="pay_card"></option><option value="transfer" data-i18n="pay_transfer"></option><option value="cheque" data-i18n="pay_cheque"></option></select></div>
+    <div class="fld"><label data-i18n="note"></label><input id="exmNote" autocomplete="off" data-i18n-ph="note_ph"></div>
+  </div>
+  <div class="err" id="exmErr"></div>
+  <div class="duo"><button class="btn b-main" style="margin-top:0" id="exmSave" type="button" data-i18n="save"></button><button class="btn b-soft" type="button" data-close data-i18n="cancel"></button></div>
+</div></div>
+
 <div class="toast" id="toast"></div>
 <div id="printArea"></div>
 
-<script src="js/i18n.js?v=07e516b2"></script>
+<script src="js/i18n.js?v=a13c7073"></script>
 <script src="js/core.js?v=93e0a461"></script>
-<script src="js/catalog.js?v=36a632cd"></script>
-<script src="js/demo.js?v=1ecfdbea"></script>
+<script src="js/catalog.js?v=e31dd33c"></script>
+<script src="js/demo.js?v=3867baef"></script>
 <script src="js/xlsx.js?v=1d957b6d"></script>
-<script src="js/store.js?v=d8619313"></script>
-<script src="js/print.js?v=ccff569c"></script>
+<script src="js/store.js?v=92a10622"></script>
+<script src="js/print.js?v=a7da2fc1"></script>
 <script src="js/combo.js?v=9704f11b"></script>
-<script src="js/whatsapp.js?v=b6b6a2bc"></script>
-<script src="js/invoice.js?v=068d01bd"></script>
-<script src="js/invoices.js?v=39dd5b6d"></script>
+<script src="js/whatsapp.js?v=3179200b"></script>
+<script src="js/invoice.js?v=b3fbbb01"></script>
+<script src="js/invoices.js?v=7477f711"></script>
+<script src="js/quotes.js?v=9d4d8c37"></script>
+<script src="js/expenses.js?v=a6d74049"></script>
 <script src="js/customers.js?v=3a975e34"></script>
 <script src="js/services.js?v=b9920e4e"></script>
-<script src="js/reports.js?v=1ecd2e0f"></script>
+<script src="js/reports.js?v=c3f2ebbf"></script>
 <script src="js/subscription.js?v=ca9f4c8f"></script>
-<script src="js/settings.js?v=e549843b"></script>
-<script src="js/app.js?v=734b5794"></script>
-<script src="js/demo-mode.js?v=8451c5b4"></script>
+<script src="js/settings.js?v=ee6158eb"></script>
+<script src="js/app.js?v=fc0477c0"></script>
+<script src="js/demo-mode.js?v=b4faa19a"></script>
 </body>
 </html>

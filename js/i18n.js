@@ -14,7 +14,7 @@
   add('nav_reports', 'Reports', 'التقارير');
   add('nav_settings', 'Settings', 'الإعدادات');
   add('pg_new', 'New Invoice', 'فاتورة جديدة');
-  add('pg_new_s', 'Enter the customer and the car, pick the services, set the amounts, then print or send on WhatsApp', 'أدخل العميل والسيارة، اختر الخدمات، حدّد المبالغ ثم اطبع أو أرسل بالواتساب');
+  add('pg_new_s', 'Enter the customer and the car, pick the services, set the amounts, then print or send on WhatsApp - or make a quotation', 'أدخل العميل والسيارة، اختر الخدمات، حدّد المبالغ ثم اطبع أو أرسل بالواتساب - أو أنشئ عرض أسعار');
   add('pg_invoices', 'Invoices & Payments', 'الفواتير والمدفوعات');
   add('pg_invoices_s', 'Search, follow every car, receive payments, send on WhatsApp, export to Excel', 'ابحث وتابع كل سيارة واستلم الدفعات وأرسل بالواتساب وصدّر إلى إكسل');
   add('pg_customers', 'Customers', 'العملاء');
@@ -37,9 +37,9 @@
   add('loading', 'Loading...', 'جارٍ التحميل...');
 
   /* ---------- example data ---------- */
-  add('demo_notice', 'EXAMPLE DATA: the customers and bills you see now are examples, so you can try everything (stages, payments, reports, WhatsApp). The prices in the Price List are examples too. When you are ready for real work, press "Remove example data".', 'بيانات تجريبية: العملاء والفواتير الظاهرة الآن مجرد أمثلة لتجرّب كل شيء (المراحل والدفعات والتقارير والواتساب). وأسعار قائمة الأسعار أمثلة أيضاً. عندما تكون جاهزاً للعمل الحقيقي اضغط "حذف البيانات التجريبية".');
+  add('demo_notice', 'EXAMPLE DATA: the customers, bills, quotations and expenses you see now are examples, so you can try everything. The prices in the Price List are examples too. When you are ready for real work, press "Remove example data".', 'بيانات تجريبية: العملاء والفواتير وعروض الأسعار والمصروفات الظاهرة الآن مجرد أمثلة لتجرّب كل شيء. وأسعار قائمة الأسعار أمثلة أيضاً. عندما تكون جاهزاً للعمل الحقيقي اضغط "حذف البيانات التجريبية".');
   add('demo_remove', 'Remove example data', 'حذف البيانات التجريبية');
-  add('confirm_demo_remove', 'Remove ONLY the example customers and example bills?\n\nYour own bills and customers are not touched. If you have made no real bill yet, the numbering starts again from 1.', 'حذف العملاء والفواتير التجريبية فقط؟\n\nفواتيرك وعملاؤك الحقيقيون لا يتأثرون. وإن لم تنشئ فاتورة حقيقية بعد فسيبدأ الترقيم من ١ من جديد.');
+  add('confirm_demo_remove', 'Remove ONLY the example customers, bills, quotations and expenses?\n\nYour own work is not touched. If you have made no real bill (or quotation) yet, its numbering starts again from 1.', 'حذف العملاء والفواتير وعروض الأسعار والمصروفات التجريبية فقط؟\n\nعملك الحقيقي لا يتأثر. وإن لم تنشئ فاتورة (أو عرض سعر) حقيقية بعد فسيبدأ ترقيمها من ١ من جديد.');
   add('demo_tag', 'Example', 'مثال');
   add('demo_removed', 'Example data removed', 'تم حذف البيانات التجريبية');
 
@@ -122,6 +122,69 @@
   add('err_desc', 'Please write the description', 'الرجاء كتابة الوصف');
   add('err_amount', 'Enter a valid amount', 'أدخل مبلغاً صحيحاً');
   add('err_name', 'Please write the name', 'الرجاء كتابة الاسم');
+
+
+  /* ---------- quotations (عروض الأسعار) ---------- */
+  add('nav_quotes', 'Quotations', 'عروض الأسعار');
+  add('pg_quotes', 'Quotations', 'عروض الأسعار');
+  add('pg_quotes_s', 'Price quotations for customers and insurance companies - follow them and turn them into bills', 'عروض أسعار للعملاء وشركات التأمين - تابعها وحوّلها إلى فواتير');
+  add('step_quote', 'Quotation', 'عرض الأسعار');
+  add('save_print_quote', 'Save & print quotation', 'حفظ وطباعة عرض السعر');
+  add('save_whatsapp_quote', 'Save & send quotation on WhatsApp', 'حفظ وإرسال عرض السعر بالواتساب');
+  add('quote_saved', 'Quotation {no} saved', 'تم حفظ عرض السعر {no}');
+  add('from_quote', 'From quotation {no}', 'من عرض السعر {no}');
+  add('valid_until', 'Valid until', 'صالح حتى');
+  add('vin', 'Chassis / VIN no.', 'رقم الشاصي');
+  add('claim', 'Insurance claim / reference no.', 'رقم المطالبة (التأمين) / المرجع');
+  add('quotation', 'Quotation', 'عرض أسعار');
+  add('quote_no', 'Quotation no.', 'رقم العرض');
+  add('qs_open', 'Open', 'مفتوح');
+  add('qs_accepted', 'Accepted', 'مقبول');
+  add('qs_rejected', 'Rejected', 'مرفوض');
+  add('qs_expired', 'Expired', 'منتهي الصلاحية');
+  add('q_open_value', 'Value of open quotations', 'قيمة العروض المفتوحة');
+  add('no_quotes', 'No quotations found', 'لا توجد عروض أسعار');
+  add('no_quotes_s', 'Choose "Quotation" on the New Invoice screen, or press New quotation', 'اختر "عرض أسعار" في شاشة فاتورة جديدة أو اضغط عرض أسعار جديد');
+  add('status', 'Status', 'الحالة');
+  add('converted_to', 'Became bill', 'تحوّل إلى فاتورة');
+  add('convert_to_invoice', 'Turn into a bill', 'تحويل إلى فاتورة');
+  add('convert_hint', 'Quotation {no} is loaded - check it, then save the bill', 'تم تحميل عرض السعر {no} - راجعه ثم احفظ الفاتورة');
+  add('delete_quote', 'Delete this quotation', 'حذف عرض السعر');
+  add('confirm_delete_quote', 'Delete quotation {no}? This cannot be undone.', 'حذف عرض السعر {no}؟ لا يمكن التراجع.');
+  add('new_quote', 'New quotation', 'عرض أسعار جديد');
+  add('search_quotes', 'Quotation no., customer, plate, car, claim...', 'رقم العرض، العميل، اللوحة، السيارة، المطالبة...');
+  add('all_statuses', 'All statuses', 'كل الحالات');
+
+  /* ---------- expenses (المصروفات) ---------- */
+  add('nav_expenses', 'Expenses', 'المصروفات');
+  add('pg_expenses', 'Expenses', 'المصروفات');
+  add('pg_expenses_s', 'What the garage spends, section by section', 'ما تصرفه الورشة، قسماً قسماً');
+  add('expenses_hint', 'Write every cost under its section, so the Reports page can show the net of each section (income minus expenses). Use "General" for rent, electricity and wages of the whole garage.', 'اكتب كل مصروف تحت قسمه، ليُظهر لك قسم التقارير صافي كل قسم (الدخل ناقص المصروفات). استخدم "عام" للإيجار والكهرباء وأجور العمال للورشة كلها.');
+  add('expense_hint', 'The owner writes every cost here.', 'يكتب المالك هنا كل مصروف.');
+  add('x_total', 'Total expenses', 'إجمالي المصروفات');
+  add('x_count', 'Number of expenses', 'عدد المصروفات');
+  add('x_top_section', 'Biggest section', 'أكثر قسم صرفاً');
+  add('x_by_section', 'Expenses by section', 'المصروفات حسب القسم');
+  add('all_sections', 'All sections', 'كل الأقسام');
+  add('no_expenses', 'No expenses found', 'لا توجد مصروفات');
+  add('no_expenses_s', 'Press Add expense', 'اضغط إضافة مصروف');
+  add('expense_type', 'Expense type', 'نوع المصروف');
+  add('expense_type_ph', 'Pick or write: parts, paint, wages...', 'اختر أو اكتب: قطع، دهان، أجور...');
+  add('expense_desc_ph', 'e.g. bumper cover from the supplier', 'مثال: غطاء صدام من المورد');
+  add('add_expense', 'Add expense', 'إضافة مصروف');
+  add('edit_expense', 'Edit expense', 'تعديل مصروف');
+  add('err_date', 'Choose the date', 'اختر التاريخ');
+  add('confirm_del_expense', 'Delete the expense {amount} - {desc}?', 'حذف المصروف {amount} - {desc}؟');
+  add('excel_saved_x', 'Excel file downloaded ({n} expenses)', 'تم تنزيل ملف إكسل ({n} مصروف)');
+  add('search_expenses', 'Description, type, note...', 'الوصف أو النوع أو الملاحظة...');
+  add('r_expenses', 'Expenses', 'المصروفات');
+  add('r_net', 'Net (income - expenses)', 'الصافي (الدخل - المصروفات)');
+  add('r_net_short', 'Net', 'الصافي');
+  add('r_income', 'Income', 'الدخل');
+  add('r_profit_by_section', 'Income, expenses and net by section', 'الدخل والمصروفات والصافي لكل قسم');
+  add('sheet_profit', 'Net by section', 'الصافي حسب القسم');
+  add('st_quote_prefix', 'Quotation number prefix', 'بادئة رقم عرض السعر');
+  add('st_quote_days', 'Quotation valid for (days)', 'مدة صلاحية عرض السعر (أيام)');
 
   /* ---------- WhatsApp ---------- */
   add('whatsapp', 'WhatsApp', 'واتساب');
