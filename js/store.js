@@ -16,7 +16,7 @@
     mode: 'local',            // 'server' | 'local'
     user: null,               // {id, username, name, role}
     settings: Catalog.defaultSettings(),
-    services: [], customers: [], invoices: [], quotes: [], expenses: [],
+    services: [], customers: [], invoices: [], quotes: [], expenses: [], memos: [],
     counter: 0, qcounter: 0,
     features: {}              // optional features the system provider has switched on (from the server)
   };
@@ -54,18 +54,18 @@
   function localSave() {
     try {
       localStorage.setItem(LS_KEY, JSON.stringify({
-        settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses,
+        settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, memos: S.memos,
         counter: S.counter, qcounter: S.qcounter
       }));
     } catch (e) { throw err('storage_full'); }
   }
   /* Run a browser-storage change; any failure (e.g. browser storage full) becomes a rejected Promise, never a crash. */
   function localOp(fn) {
-    var snap = { settings: S.settings, services: S.services.slice(), customers: S.customers.slice(), invoices: S.invoices.slice(), quotes: S.quotes.slice(), expenses: S.expenses.slice(), counter: S.counter, qcounter: S.qcounter };
+    var snap = { settings: S.settings, services: S.services.slice(), customers: S.customers.slice(), invoices: S.invoices.slice(), quotes: S.quotes.slice(), expenses: S.expenses.slice(), memos: S.memos.slice(), counter: S.counter, qcounter: S.qcounter };
     try { return Promise.resolve(fn()); }
     catch (e) {                                   // nothing is half-applied: put everything back as it was
       S.settings = snap.settings; S.services = snap.services; S.customers = snap.customers; S.invoices = snap.invoices;
-      S.quotes = snap.quotes; S.expenses = snap.expenses; S.counter = snap.counter; S.qcounter = snap.qcounter;
+      S.quotes = snap.quotes; S.expenses = snap.expenses; S.memos = snap.memos; S.counter = snap.counter; S.qcounter = snap.qcounter;
       Catalog.setCustom(S.settings);
       return Promise.reject(e);
     }
@@ -82,14 +82,14 @@
   function starter() {
     var s = Catalog.defaultSettings();
     var demo = Demo.build(s, S.user ? S.user.name : '');
-    return { settings: s, services: Catalog.defaultServices(), customers: demo.customers, invoices: demo.invoices, quotes: demo.quotes, expenses: demo.expenses,
+    return { settings: s, services: Catalog.defaultServices(), customers: demo.customers, invoices: demo.invoices, quotes: demo.quotes, expenses: demo.expenses, memos: demo.memos,
       counter: demo.counter, qcounter: demo.qcounter };
   }
   function seedEmpty() { adopt(starter()); }
   function adopt(d) {
     S.settings = Object.assign(Catalog.defaultSettings(), d.settings || {}); Catalog.setCustom(S.settings);
     var l = fixLists(d);
-    S.services = l.services; S.customers = l.customers; S.invoices = l.invoices; S.quotes = l.quotes; S.expenses = l.expenses;
+    S.services = l.services; S.customers = l.customers; S.invoices = l.invoices; S.quotes = l.quotes; S.expenses = l.expenses; S.memos = l.memos;
     S.counter = d.counter || 0; S.qcounter = d.qcounter || 0;
   }
   function pad(n) { return (S.settings.prefix || 'INV') + '-' + String(n).padStart(5, '0'); }
@@ -142,6 +142,12 @@
     if (x.demo) x.demo = true; else delete x.demo;
     return x;
   }
+  function fixMemo(m) {
+    m.id = str(m.id); m.title = str(m.title); m.date = str(m.date); m.time = str(m.time); m.note = str(m.note);
+    m.done = !!m.done; m.doneAt = str(m.doneAt);
+    if (m.demo) m.demo = true; else delete m.demo;
+    return m;
+  }
   function fixCustomer(c) {
     c.id = str(c.id); c.name = str(c.name); c.phone = str(c.phone); c.vatNo = str(c.vatNo); c.addr = str(c.addr); c.notes = str(c.notes);
     if (c.demo) c.demo = true; else delete c.demo;
@@ -154,12 +160,13 @@
       customers: (d.customers || []).filter(Boolean).map(fixCustomer),
       invoices: (d.invoices || []).filter(Boolean).map(fixInvoice),
       quotes: (d.quotes || []).filter(Boolean).map(fixQuote),
-      expenses: (d.expenses || []).filter(Boolean).map(fixExpense)
+      expenses: (d.expenses || []).filter(Boolean).map(fixExpense),
+      memos: (d.memos || []).filter(Boolean).map(fixMemo)
     };
   }
   function hasDemo() {
     return S.customers.some(function (c) { return c.demo; }) || S.invoices.some(function (i) { return i.demo; }) ||
-      S.quotes.some(function (q) { return q.demo; }) || S.expenses.some(function (x) { return x.demo; });
+      S.quotes.some(function (q) { return q.demo; }) || S.expenses.some(function (x) { return x.demo; }) || S.memos.some(function (m) { return m.demo; });
   }
 
   /* ------------------------------------------------ boot / auth */
@@ -196,7 +203,7 @@
       S.user = d.user;
       S.settings = Object.assign(Catalog.defaultSettings(), d.settings || {}); Catalog.setCustom(S.settings);
       var l = fixLists(d);
-      S.services = l.services; S.customers = l.customers; S.invoices = l.invoices; S.quotes = l.quotes; S.expenses = l.expenses;
+      S.services = l.services; S.customers = l.customers; S.invoices = l.invoices; S.quotes = l.quotes; S.expenses = l.expenses; S.memos = l.memos;
       S.counter = d.counter || 0; S.qcounter = d.qcounter || 0;
       S.features = d.features || {};
       // A brand-new server install starts with the price list and the example data
@@ -205,13 +212,13 @@
         var st = starter();
         adopt(st);
         if (d.user && d.user.role === 'admin') {
-          return call('restore', { data: { settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, counter: S.counter, qcounter: S.qcounter } })
+          return call('restore', { data: { settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, memos: S.memos, counter: S.counter, qcounter: S.qcounter } })
             .then(function () { return call('load'); }).then(function (again) {
               var l2 = fixLists(again);
-              S.customers = l2.customers; S.invoices = l2.invoices; S.quotes = l2.quotes; S.expenses = l2.expenses; S.counter = again.counter || 0; S.qcounter = again.qcounter || 0;
+              S.customers = l2.customers; S.invoices = l2.invoices; S.quotes = l2.quotes; S.expenses = l2.expenses; S.memos = l2.memos; S.counter = again.counter || 0; S.qcounter = again.qcounter || 0;
             });
         }
-        S.customers = []; S.invoices = []; S.quotes = []; S.expenses = []; S.counter = 0; S.qcounter = 0;
+        S.customers = []; S.invoices = []; S.quotes = []; S.expenses = []; S.memos = []; S.counter = 0; S.qcounter = 0;
       }
     });
   }
@@ -335,6 +342,33 @@
     return localOp(function () { drop(); localSave(); });
   }
 
+  /* ---- personal reminders (تذكير عام): the owner's own notes to himself, not tied to a bill ---- */
+  function saveMemo(m) {
+    var ro = readOnly(); if (ro) return ro;
+    if (isServer()) return call('put', { col: 'memos', doc: m }).then(function (r) { var d = fixMemo(r.doc); upsert(S.memos, d); return d; });
+    return localOp(function () { upsert(S.memos, m); localSave(); return m; });
+  }
+  function removeMemo(id) {
+    var ro = readOnly(); if (ro) return ro;
+    var drop = function () { S.memos = S.memos.filter(function (x) { return x.id !== id; }); };
+    if (isServer()) return call('del', { col: 'memos', id: id }).then(drop);
+    return localOp(function () { drop(); localSave(); });
+  }
+
+  /* Keep the A4 PDF of a bill / quotation on the server (secret link, server only). Resolves to the link token. */
+  function savePdf(col, id, blob) {
+    var ro = readOnly(); if (ro) return ro;
+    if (!isServer()) return Promise.reject(err('no_api'));
+    return new Promise(function (ok, no) {
+      var fr = new FileReader();
+      fr.onload = function () { ok(String(fr.result).split(',')[1]); }; fr.onerror = no; fr.readAsDataURL(blob);
+    }).then(function (b64) { return call('save_pdf', { id: id, col: col, pdf: b64 }); }).then(function (r) {
+      var doc = (col === 'quotes' ? S.quotes : S.invoices).filter(function (i) { return i.id === id; })[0];
+      if (doc) doc.shareToken = r.token;
+      return r.token;
+    });
+  }
+
   /* The secret link the customer opens on his phone (server only). col = 'invoices' | 'quotes'. Returns the token. */
   function shareDoc(col, id) {
     var doc = (col === 'quotes' ? S.quotes : S.invoices).filter(function (i) { return i.id === id; })[0];
@@ -361,6 +395,7 @@
       S.invoices = S.invoices.filter(function (i) { return !i.demo; });
       S.quotes = S.quotes.filter(function (q) { return !q.demo; });
       S.expenses = S.expenses.filter(function (x) { return !x.demo; });
+      S.memos = S.memos.filter(function (m) { return !m.demo; });
     };
     if (isServer()) {
       return call('demo_remove', {}).then(function (r) { drop(); S.counter = r.counter; S.qcounter = r.qcounter; });
@@ -371,14 +406,14 @@
   /* ------------------------------------------------ whole database */
   function exportAll() {
     return { app: 'best-and-fast-pos', version: 2, exported: new Date().toISOString(),
-      settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, counter: S.counter, qcounter: S.qcounter };
+      settings: S.settings, services: S.services, customers: S.customers, invoices: S.invoices, quotes: S.quotes, expenses: S.expenses, memos: S.memos, counter: S.counter, qcounter: S.qcounter };
   }
   function restore(data) {
     var ro = readOnly(); if (ro) return ro;
     if (!data || !Array.isArray(data.invoices)) return Promise.reject(err('bad_backup'));
     var payload = {
       settings: Object.assign(Catalog.defaultSettings(), data.settings || {}),
-      services: data.services || [], customers: data.customers || [], invoices: data.invoices || [], quotes: data.quotes || [], expenses: data.expenses || [],
+      services: data.services || [], customers: data.customers || [], invoices: data.invoices || [], quotes: data.quotes || [], expenses: data.expenses || [], memos: data.memos || [],
       counter: Math.max(data.counter || 0, data.invoices.reduce(function (m, i) { return Math.max(m, i.no || 0); }, 0)),
       qcounter: Math.max(data.qcounter || 0, (data.quotes || []).reduce(function (m, i) { return Math.max(m, i.no || 0); }, 0))
     };
@@ -390,7 +425,7 @@
     var settings = S.settings;
     if (isServer()) {
       return call('reset', { resetCounter: !!resetCounter }).then(function () {
-        return call('restore', { data: { settings: settings, services: S.services, customers: [], invoices: [], quotes: [], expenses: S.expenses, counter: resetCounter ? 0 : S.counter, qcounter: resetCounter ? 0 : S.qcounter } });
+        return call('restore', { data: { settings: settings, services: S.services, customers: [], invoices: [], quotes: [], expenses: S.expenses, memos: S.memos, counter: resetCounter ? 0 : S.counter, qcounter: resetCounter ? 0 : S.qcounter } });
       }).then(function () { S.customers = []; S.invoices = []; S.quotes = []; if (resetCounter) { S.counter = 0; S.qcounter = 0; } });
     }
     return localOp(function () { S.customers = []; S.invoices = []; S.quotes = []; if (resetCounter) { S.counter = 0; S.qcounter = 0; } localSave(); });
@@ -416,14 +451,15 @@
     saveCustomer: saveCustomer, removeCustomer: removeCustomer,
     createInvoice: createInvoice, updateInvoice: updateInvoice, removeInvoices: removeInvoices,
     createQuote: createQuote, updateQuote: updateQuote, removeQuote: removeQuote,
-    saveExpense: saveExpense, removeExpense: removeExpense,
-    shareDoc: shareDoc, shareInvoice: function (id) { return shareDoc('invoices', id); },
+    saveExpense: saveExpense, removeExpense: removeExpense, saveMemo: saveMemo, removeMemo: removeMemo,
+    shareDoc: shareDoc, savePdf: savePdf, shareInvoice: function (id) { return shareDoc('invoices', id); },
     removeDemo: removeDemo, hasDemo: hasDemo,
     exportAll: exportAll, restore: restore, wipe: wipe,
     users: users, health: health, addUser: addUser, delUser: delUser, setPassword: setPassword,
     invoiceById: invoiceById,
     quoteById: function (id) { return S.quotes.filter(function (i) { return i.id === id; })[0]; },
     expenseById: function (id) { return S.expenses.filter(function (i) { return i.id === id; })[0]; },
+    memoById: function (id) { return S.memos.filter(function (i) { return i.id === id; })[0]; },
     serviceById: function (id) { return S.services.filter(function (i) { return i.id === id; })[0]; },
     customerById: function (id) { return S.customers.filter(function (i) { return i.id === id; })[0]; }
   };

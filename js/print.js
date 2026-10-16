@@ -64,12 +64,12 @@
         '<div class="l"><h1>' + esc(s.name) + '</h1>' +
           '<div class="sm">' + esc(s.addr) + '</div>' +
           '<div class="sm">Tel: <span class="ltr">' + esc(s.phone) + '</span>' + (s.email ? ' &nbsp;|&nbsp; ' + esc(s.email) : '') + '</div>' +
-          '<div class="sm">C.R. No: <b class="ltr">' + esc(inv.cr || s.cr) + '</b>' + (tax ? ' &nbsp;|&nbsp; VATIN: <b class="ltr">' + esc(inv.vatNo || s.vatNo) + '</b>' : '') + '</div></div>' +
+          (s.crNameEn ? '<div class="sm">Registered name: <b>' + esc(s.crNameEn) + '</b></div>' : '') + '<div class="sm">C.R. No: <b class="ltr">' + esc(inv.cr || s.cr) + '</b>' + (tax ? ' &nbsp;|&nbsp; VATIN: <b class="ltr">' + esc(inv.vatNo || s.vatNo) + '</b>' : '') + '</div></div>' +
         '<img src="' + logo + '" alt="">' +
         '<div class="r"><h1>' + esc(s.nameAr) + '</h1>' +
           '<div class="sm">' + esc(s.addrAr) + '</div>' +
           '<div class="sm">هاتف: <span class="ltr">' + esc(s.phone) + '</span></div>' +
-          '<div class="sm">السجل التجاري: <b class="ltr">' + esc(inv.cr || s.cr) + '</b>' + (tax ? ' &nbsp;|&nbsp; الرقم الضريبي: <b class="ltr">' + esc(inv.vatNo || s.vatNo) + '</b>' : '') + '</div></div>' +
+          (s.crNameAr ? '<div class="sm">الاسم في السجل التجاري: <b>' + esc(s.crNameAr) + '</b></div>' : '') + '<div class="sm">السجل التجاري: <b class="ltr">' + esc(inv.cr || s.cr) + '</b>' + (tax ? ' &nbsp;|&nbsp; الرقم الضريبي: <b class="ltr">' + esc(inv.vatNo || s.vatNo) + '</b>' : '') + '</div></div>' +
       '</div><div class="goldbar"></div>' +
       '<div class="doc">' + dt[0] + '<small>' + dt[1] + '</small>' + (inv.void ? '<div class="stamp">VOID / ملغاة</div>' : '') + '</div>' +
       '<div class="meta">' +
@@ -86,10 +86,10 @@
           (inv.kind === 'repair' && !inv.void ? row('Status', 'الحالة', esc(jobName(inv.job))) : '') +
           row('Prepared by', 'أعدّها', esc(inv.createdBy || '')) + '</div>' +
       '</div>' + vehicle +
+      (inv.note ? '<div class="note red"><b>Note / ملاحظة:</b> ' + esc(inv.note).replace(/\n/g, '<br>') + '</div>' : '') +
       '<table><thead><tr><th class="c" style="width:28px">#</th><th>Description / الوصف</th><th class="c">Unit / الوحدة</th><th class="c">Qty / الكمية</th><th class="n">Rate / السعر</th><th class="n">Amount / المبلغ (OMR)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="bottom"><div>' +
         (quote ? '<div class="note"><b>Price quotation / عرض سعر:</b> This is a quotation, not an invoice. The final amount may change after inspection.<br><span style="direction:rtl;display:block">هذا عرض سعر وليس فاتورة، وقد يتغيّر المبلغ النهائي بعد الفحص.</span></div>' : '') +
-        (inv.note ? '<div class="note"><b>Note / ملاحظة:</b> ' + esc(inv.note) + '</div>' : '') +
         (s.bank ? '<div class="note"><b>Bank / البنك:</b> ' + esc(s.bank).replace(/\n/g, '<br>') + '</div>' : '') +
         (payRows ? '<div class="box"><div class="t"><span>Payments received</span><span>الدفعات المستلمة</span></div>' + payRows + '</div>' : '') +
       '</div><div class="tot">' +
@@ -122,6 +122,7 @@
       l('<b>No: ' + esc(inv.number) + '</b>', fdate(inv.date) + ' ' + esc(inv.time || '')) +
       l('Customer:', esc(inv.customerName)) + l('Phone:', esc(inv.customerPhone)) + l('Cust. VATIN:', esc(inv.customerVat)) +
       (inv.kind !== 'parts' ? l('Plate:', esc(inv.plate)) + l('Car:', esc(inv.car)) + l('Due:', inv.due ? fdate(inv.due) : '') : '') +
+      (inv.note ? '<div class="rnote">NOTE / ملاحظة: ' + esc(inv.note).replace(/\n/g, '<br>') + '</div>' : '') +
       '<hr><table><thead><tr><th>Item</th><th>Qty</th><th style="text-align:right">Amount</th></tr></thead><tbody>' + rows + '</tbody></table><hr>' +
       l('Subtotal', f3(inv.office)) + (inv.discount > 0 ? l('Discount', '-' + f3(inv.discount)) : '') +
       (tax ? l('VAT ' + inv.vatPct + '%', f3(inv.vat)) : '') + (inv.behalf > 0 ? l('Other (no VAT)', f3(inv.behalf)) : '') +
@@ -154,9 +155,14 @@
   }
 
   /* ------------------------------------------------ print engine */
-  function run(html, paper) {
+  /* paper: a4 | a5 | 80 | 58 (receipt rolls).  scale: Settings "print scale" in % (50-150) for the sheets. */
+  function run(html, paper, scale) {
     $('printArea').innerHTML = html;
-    $('pageStyle').textContent = paper === '80' ? '@page{size:80mm auto;margin:3mm}' : '@page{size:A4;margin:11mm}';
+    var k = (Number(scale) || 100) / 100;
+    $('pageStyle').textContent = paper === '80' ? '@page{size:80mm auto;margin:3mm}'
+      : paper === '58' ? '@page{size:58mm auto;margin:2mm}#printArea .rc{width:52mm;font-size:10px}#printArea .rc h2{font-size:13px}#printArea .rc .grand{font-size:12px}'
+      : paper === 'a5' ? '@page{size:A5;margin:8mm}#printArea .inv{zoom:' + (0.7 * k).toFixed(3) + '}'
+      : '@page{size:A4;margin:11mm}#printArea .inv{zoom:' + k.toFixed(3) + '}';
     var imgs = Array.prototype.slice.call($('printArea').querySelectorAll('img'));
     var pending = imgs.filter(function (i) { return !i.complete; });
     var fired = false;
@@ -168,8 +174,12 @@
   }
 
   window.Print = {
-    invoice: function (inv) { var p = S().paper === '80' && inv.kind !== 'quote' ? '80' : 'a4'; run(p === '80' ? thermal(inv) : a4(inv), p); },
-    statement: function (cust) { run(statement(cust), 'a4'); },
+    invoice: function (inv) {
+      var p = S().paper || 'a4', roll = p === '80' || p === '58';
+      if (roll && inv.kind === 'quote') { p = 'a4'; roll = false; }                    // a quotation is always a sheet
+      run(roll ? thermal(inv) : a4(inv), p, S().printScale);
+    },
+    statement: function (cust) { var p = S().paper === 'a5' ? 'a5' : 'a4'; run(statement(cust), p, S().printScale); },
     /* the A4 bill as HTML, drawn with the shop's details given (used by bill.html) */
     billHtml: function (inv, settings) { override = settings; try { return a4(inv); } finally { override = null; } },
     PAYM: PAYM, JOBS: JOBS, docType: docType, quoteState: quoteState, quoteStatus: quoteStatus

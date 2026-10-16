@@ -110,7 +110,7 @@
   add('note', 'Note', 'ملاحظة');
   add('note_ph', 'Optional', 'اختياري');
   add('save_print', 'Save & print invoice', 'حفظ وطباعة الفاتورة');
-  add('save_whatsapp', 'Save & send on WhatsApp', 'حفظ وإرسال بالواتساب');
+  add('save_whatsapp', 'Save & send PDF on WhatsApp', 'حفظ وإرسال PDF بالواتساب');
   add('save_only', 'Save only', 'حفظ فقط');
   add('clear', 'Clear', 'مسح');
   add('confirm_clear', 'Clear the current invoice?', 'هل تريد مسح الفاتورة الحالية؟');
@@ -130,7 +130,7 @@
   add('pg_quotes_s', 'Price quotations for customers and insurance companies - follow them and turn them into bills', 'عروض أسعار للعملاء وشركات التأمين - تابعها وحوّلها إلى فواتير');
   add('step_quote', 'Quotation', 'عرض الأسعار');
   add('save_print_quote', 'Save & print quotation', 'حفظ وطباعة عرض السعر');
-  add('save_whatsapp_quote', 'Save & send quotation on WhatsApp', 'حفظ وإرسال عرض السعر بالواتساب');
+  add('save_whatsapp_quote', 'Save & send quotation PDF on WhatsApp', 'حفظ وإرسال عرض السعر PDF بالواتساب');
   add('quote_saved', 'Quotation {no} saved', 'تم حفظ عرض السعر {no}');
   add('from_quote', 'From quotation {no}', 'من عرض السعر {no}');
   add('valid_until', 'Valid until', 'صالح حتى');
@@ -235,21 +235,62 @@
   add('st_remind_days', 'Default reminder after a credit bill (days, 0 = none)', 'التذكير الافتراضي بعد فاتورة آجلة (أيام، ٠ = بدون)');
   add('wa_title_reminder', 'Remind the customer to pay', 'تذكير العميل بالسداد');
 
+
+  /* ---------- customer requests: PDF, personal reminders, print size, registered name, red note ---------- */
+  add('pdf_download', 'Download PDF', 'تنزيل PDF');
+  add('pdf_preparing', 'Preparing the PDF...', 'جارٍ تجهيز ملف PDF...');
+  add('pdf_saved', 'PDF saved: {name}', 'تم حفظ الملف: {name}');
+  add('pdf_failed', 'The PDF could not be made. Try again.', 'تعذّر إنشاء ملف PDF. حاول مرة أخرى.');
+  add('wa_web_pdf_saved', 'The PDF is saved in Downloads. In WhatsApp Web log in if asked, then press the paperclip > Document and choose it (the message also has the link on the real website).', 'تم حفظ الـPDF في التنزيلات. في واتساب ويب سجّل الدخول إن طُلب، ثم اضغط المشبك ثم "مستند" واختر الملف (والرسالة فيها رابط الفاتورة أيضاً على الموقع الحقيقي).');
+  add('wa_pdf_failed', 'The PDF could not be made on this device, so only the text message can be sent. Close this window and open it again to retry.', 'تعذّر إنشاء ملف PDF على هذا الجهاز، لذلك يمكن إرسال الرسالة النصية فقط. أغلق النافذة وافتحها مرة أخرى للمحاولة.');
+  add('wa_pdf', 'Send PDF - WhatsApp app', 'إرسال PDF - تطبيق واتساب');
+  add('wa_pdf_web', 'Send PDF - WhatsApp Web', 'إرسال PDF - واتساب ويب');
+  add('wa_pdf_preparing', 'Preparing the PDF...', 'جارٍ تجهيز ملف PDF...');
+  add('wa_pdf_hint', 'The bill is saved and sent as an A4 PDF. Choose how to send it: the WhatsApp app or WhatsApp Web. On a phone the PDF file itself goes through the share list. On a computer the customer gets a link that opens the PDF (press Send in WhatsApp). "Download PDF" saves the file if you prefer to attach it yourself with the paperclip.', 'حُفظت الفاتورة وتُرسل كملف PDF بحجم A4. اختر الطريقة: تطبيق واتساب أو واتساب ويب. على الهاتف يذهب ملف الـPDF نفسه عبر قائمة المشاركة. وعلى الكمبيوتر يصل العميل رابط يفتح الفاتورة PDF (اضغط إرسال في واتساب). وزر "تنزيل PDF" يحفظ الملف إن أردت إرفاقه بنفسك بأيقونة المشبك.');
+  add('send_pdf', 'Send as PDF', 'إرسال PDF');
+  add('send_pdf_wa', 'Send PDF on WhatsApp', 'إرسال PDF بالواتساب');
+  add('wa_pdf_link_sent', 'WhatsApp opened - press Send: the customer gets the link that opens the PDF', 'تم فتح واتساب - اضغط إرسال: سيصل العميل رابط يفتح الفاتورة PDF');
+  add('wa_pdf_saved', 'PDF saved in Downloads - attach it in WhatsApp (paperclip)', 'تم حفظ الملف في التنزيلات - أرفقه في واتساب (أيقونة المشبك)');
+  add('note_red', 'Note on the invoice (printed in red)', 'ملاحظة على الفاتورة (تُطبع باللون الأحمر)');
+  add('note_red_ph', 'e.g. Please collect the car before 5 pm', 'مثال: يرجى استلام السيارة قبل الساعة ٥ مساءً');
+  add('paper_a5', 'A5 invoice (half sheet)', 'فاتورة A5 (نصف ورقة)');
+  add('paper_58', '58 mm receipt printer', 'طابعة إيصالات ٥٨ مم');
+  add('st_print_scale', 'Print scale % (100 = normal, lower = smaller print)', 'مقياس الطباعة % (١٠٠ = عادي، أقل = طباعة أصغر)');
+  add('st_cr_name_ar', 'Name in the commercial register (Arabic)', 'الاسم في السجل التجاري (عربي)');
+  add('st_cr_name_en', 'Name in the commercial register (English)', 'الاسم في السجل التجاري (إنجليزي)');
+  add('rd_0', 'Today', 'اليوم');
+  add('memo_title', 'My reminders', 'تذكيراتي الشخصية');
+  add('memo_hint', 'Your own notes to yourself, not tied to any bill (call the supplier, renew a licence, buy materials...). They pop up on the day and time you choose.', 'ملاحظاتك الخاصة لنفسك وغير المرتبطة بأي فاتورة (الاتصال بمورد، تجديد رخصة، شراء مواد...). تظهر لك نافذة في اليوم والوقت الذي تحدده.');
+  add('memo_sub', 'Only the owner sees these reminders.', 'هذه التذكيرات يراها المالك فقط.');
+  add('memo_add', 'Add reminder', 'إضافة تذكير');
+  add('memo_edit', 'Edit reminder', 'تعديل التذكير');
+  add('memo_what', 'What do you want to remember?', 'ما الذي تريد تذكره؟');
+  add('memo_what_ph', 'e.g. call the paint supplier', 'مثال: الاتصال بمورد الدهان');
+  add('memo_time', 'Time (optional)', 'الوقت (اختياري)');
+  add('memo_note', 'Details (optional)', 'تفاصيل (اختياري)');
+  add('memo_done', 'Done', 'تم');
+  add('memo_mark_done', 'Done', 'تم');
+  add('memo_reopen', 'Reopen', 'إعادة فتح');
+  add('memo_none', 'No personal reminders', 'لا توجد تذكيرات شخصية');
+  add('memo_none_s', 'Press Add reminder', 'اضغط إضافة تذكير');
+  add('memo_err_title', 'Write what you want to remember', 'اكتب ما تريد تذكره');
+  add('memo_confirm_delete', 'Delete the reminder "{title}"?', 'حذف التذكير "{title}"؟');
+
   /* ---------- WhatsApp ---------- */
   add('whatsapp', 'WhatsApp', 'واتساب');
   add('send_whatsapp', 'Send on WhatsApp', 'إرسال بالواتساب');
   add('wa_title', 'Send the bill on WhatsApp', 'إرسال الفاتورة بالواتساب');
   add('wa_phone', 'Customer WhatsApp number', 'رقم واتساب العميل');
   add('wa_phone_hint', 'Oman: 8 digits (9xxx xxxx). Another country: start with + and the country code. Leave it empty to choose the person inside WhatsApp. If the first button does not open, use the WhatsApp Web button.', 'عُمان: ٨ أرقام (9xxx xxxx). دولة أخرى: ابدأ بـ + ثم رمز الدولة. اتركه فارغاً لتختار الشخص من داخل واتساب. وإن لم يفتح الزر الأول استخدم زر واتساب ويب.');
-  add('wa_link', 'Add a link to view the full invoice', 'أضف رابطاً لعرض الفاتورة كاملة');
+  add('wa_link', 'Add a link that opens the invoice as a PDF', 'أضف رابطاً يفتح الفاتورة بصيغة PDF');
   add('wa_message', 'Message (you can edit it before sending)', 'الرسالة (يمكنك تعديلها قبل الإرسال)');
-  add('wa_open', 'Open WhatsApp', 'فتح واتساب');
+  add('wa_open', 'Send a text message only', 'إرسال رسالة نصية فقط');
   add('wa_web', 'Open in WhatsApp Web (web.whatsapp.com)', 'فتح في واتساب ويب (web.whatsapp.com)');
   add('wa_copy', 'Copy message', 'نسخ الرسالة');
   add('wa_bad_phone', 'This number cannot be used. Oman: 8 digits. Another country: start with + and the country code.', 'لا يمكن استخدام هذا الرقم. عُمان: ٨ أرقام. دولة أخرى: ابدأ بـ + ثم رمز الدولة.');
   add('wa_link_local', 'The invoice link works only on the real website address, so it is left out here.', 'رابط الفاتورة يعمل فقط على عنوان الموقع الحقيقي، لذلك لم يُضف هنا.');
-  add('wa_link_pending', 'Preparing the invoice link...', 'جارٍ تجهيز رابط الفاتورة...');
-  add('wa_link_failed', 'The link could not be made now. The message is ready without it.', 'تعذّر إنشاء الرابط الآن. الرسالة جاهزة بدونه.');
+  add('wa_link_pending', 'Preparing the PDF for the customer...', 'جارٍ تجهيز ملف PDF للعميل...');
+  add('wa_link_failed', 'The PDF could not be kept online now. The message is ready without the link - use "Download PDF" to attach the file yourself.', 'تعذّر حفظ الملف على الإنترنت الآن. الرسالة جاهزة بدون الرابط - استخدم "تنزيل PDF" لإرفاق الملف بنفسك.');
   add('wa_popup', 'The browser blocked the new window. Allow pop-ups for this site, or use "Copy message".', 'منع المتصفح فتح النافذة. اسمح بالنوافذ المنبثقة لهذا الموقع أو استخدم "نسخ الرسالة".');
   add('wa_opened', 'WhatsApp opened - press Send there', 'تم فتح واتساب - اضغط إرسال هناك');
   add('wa_copied', 'Message copied', 'تم نسخ الرسالة');

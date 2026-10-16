@@ -10,6 +10,7 @@
 
   var cur = null;               // the bill being sent
   var mode = 'bill';            // 'bill' = send the bill, 'reminder' = ask for the money still owed
+  var pdfRes = null;            // the bill as an A4 PDF file, made in the background while the window is open
   var token = '';               // its private link code ('' = none)
   var state = 'none';           // none | pending | ready | failed
   var MAX_URL = 6500;           // keep the wa.me address short enough for every browser
@@ -36,12 +37,12 @@
 
   /* ------------------------------------------------ the message */
   var TX = {
-    ar: { quote: 'رقم عرض السعر', valid: 'صالح حتى', invoice: 'فاتورة رقم', date: 'التاريخ', customer: 'العميل', car: 'السيارة', plate: 'اللوحة', fault: 'العمل', status: 'حالة السيارة',
+    ar: { note: 'ملاحظة', quote: 'رقم عرض السعر', valid: 'صالح حتى', invoice: 'فاتورة رقم', date: 'التاريخ', customer: 'العميل', car: 'السيارة', plate: 'اللوحة', fault: 'العمل', status: 'حالة السيارة',
       disc: 'الخصم', vat: 'الضريبة', total: 'الإجمالي', paid: 'المدفوع', balance: 'المتبقي', fullypaid: 'الفاتورة مدفوعة بالكامل ✅',
-      link: 'لعرض الفاتورة كاملة', contact: 'للتواصل', thanks: 'شكراً لتعاملكم معنا', omr: 'ر.ع', voided: '⚠️ فاتورة ملغاة', more: 'بنود أخرى', due: 'موعد التسليم' },
-    en: { quote: 'Quotation No', valid: 'Valid until', invoice: 'Invoice No', date: 'Date', customer: 'Customer', car: 'Car', plate: 'Plate', fault: 'Work', status: 'Car status',
+      link: 'الفاتورة بصيغة PDF - اضغط على الرابط لفتحها', contact: 'للتواصل', thanks: 'شكراً لتعاملكم معنا', omr: 'ر.ع', voided: '⚠️ فاتورة ملغاة', more: 'بنود أخرى', due: 'موعد التسليم' },
+    en: { note: 'Note', quote: 'Quotation No', valid: 'Valid until', invoice: 'Invoice No', date: 'Date', customer: 'Customer', car: 'Car', plate: 'Plate', fault: 'Work', status: 'Car status',
       disc: 'Discount', vat: 'VAT', total: 'Total', paid: 'Paid', balance: 'Balance due', fullypaid: 'Fully paid ✅',
-      link: 'View the full invoice', contact: 'Contact', thanks: 'Thank you for your business', omr: 'OMR', voided: '⚠️ VOID invoice', more: 'more items', due: 'Expected delivery' }
+      link: 'Your invoice as a PDF - tap the link to open it', contact: 'Contact', thanks: 'Thank you for your business', omr: 'OMR', voided: '⚠️ VOID invoice', more: 'more items', due: 'Expected delivery' }
   };
   function nameOf(it, lang) { return lang === 'ar' ? (it.a || it.n) : (it.n || it.a); }
 
@@ -77,6 +78,7 @@
       L.push(x.status + ': ' + (lang === 'ar' ? job[1] : job[0]));
       if (inv.due && inv.job !== 'delivered') L.push(x.due + ': ' + fdate(inv.due));
     }
+    if (inv.note) { L.push(''); L.push('*' + x.note + ':* ' + inv.note); }                      // the red note of the bill
     if (link) { L.push(''); L.push(x.link + ':'); L.push(link); }
     L.push('');
     if (s.phone) L.push(x.contact + ': ' + s.phone);
@@ -87,9 +89,9 @@
   /* A polite payment reminder for a bill that is not fully paid. */
   var RX = {
     ar: { hello: 'السلام عليكم', intro: 'تذكير ودّي بالمبلغ المتبقي على الفاتورة رقم', dated: 'بتاريخ', total: 'الإجمالي', paid: 'المدفوع', due: 'المتبقي', car: 'السيارة', plate: 'اللوحة',
-      link: 'لعرض الفاتورة كاملة', ask: 'نرجو التكرم بالسداد في أقرب وقت.', contact: 'للتواصل', thanks: 'شكراً لتعاملكم معنا', omr: 'ر.ع' },
+      link: 'الفاتورة بصيغة PDF - اضغط على الرابط لفتحها', ask: 'نرجو التكرم بالسداد في أقرب وقت.', contact: 'للتواصل', thanks: 'شكراً لتعاملكم معنا', omr: 'ر.ع' },
     en: { hello: 'Hello', intro: 'A friendly reminder about the amount still owed on invoice', dated: 'dated', total: 'Total', paid: 'Paid', due: 'Balance due', car: 'Car', plate: 'Plate',
-      link: 'View the full invoice', ask: 'Please settle it as soon as possible.', contact: 'Contact', thanks: 'Thank you for your business', omr: 'OMR' }
+      link: 'Your invoice as a PDF - tap the link to open it', ask: 'Please settle it as soon as possible.', contact: 'Contact', thanks: 'Thank you for your business', omr: 'OMR' }
   };
   function reminderMessage(inv, lang, link) {
     var s = Store.s.settings, x = RX[lang === 'en' ? 'en' : 'ar'], L = [];
@@ -126,7 +128,7 @@
   /* ------------------------------------------------ the online link */
   function isLocalHost() { return location.protocol === 'file:' || /^(localhost|127\.0\.0\.1|\[::1\]|)$/.test(location.hostname); }
   function canLink() { return Store.isServer() && !isLocalHost(); }
-  function linkUrl() { return token ? new URL('bill.html?t=' + token, location.href).href : ''; }
+  function linkUrl() { return token ? new URL('api/index.php?action=pdf&t=' + token, location.href).href : ''; }
 
   /* ------------------------------------------------ window */
   function $s(id) { return $(id); }
@@ -150,23 +152,75 @@
     $s('waPhone').value = inv.customerPhone || (cust && cust.phone) || '';
     $s('waLang').value = I18N.lang === 'en' ? 'en' : 'ar';
     $s('waSub').textContent = inv.number + ' · ' + inv.customerName;
-    var linkOk = canLink() && (token || Store.canWrite());
+    var linkOk = canLink() && Store.canWrite();                // the PDF can be kept on the server only on the real website, by someone who may write
     $s('waLink').closest('.switch').style.display = linkOk ? '' : 'none';
     $s('waLink').checked = linkOk;
-    state = token ? 'ready' : 'none';
-    if (linkOk && !token) {
-      state = 'pending';
-      var id = inv.id;
-      Store.shareDoc(inv.kind === 'quote' ? 'quotes' : 'invoices', id).then(function (tk) {
-        if (!cur || cur.id !== id) return;
-        token = tk; state = 'ready'; rebuild();
-      }).catch(function () {
-        if (!cur || cur.id !== id) return;
-        state = 'failed'; $s('waLink').checked = false; rebuild();
-      });
-    }
+    state = 'none';
     rebuild();
+    prepPdf(inv, linkOk);
     App.openModal('waModal');
+  }
+
+  /* ---- the PDF (A4): made as soon as the window opens, and - on the real website - kept on the server, so that pressing the
+          button can send the message with a link that opens the PDF at once (no waiting, no blocked pop-up) ---- */
+  function pdfUi(on, busy) {
+    var b = $s('waPdf'); b.hidden = !on; b.disabled = !!busy;
+    $s('waPdfTxt').textContent = t(busy ? 'wa_pdf_preparing' : 'wa_pdf');
+    var w = $s('waWeb'); w.disabled = !!on && !!busy;                                  // both ways to send the PDF wait until it is ready
+    w.classList.toggle('b-wa', on); w.classList.toggle('b-soft', !on);
+    $s('waWebTxt').textContent = t(on ? 'wa_pdf_web' : 'wa_web');
+    $s('waPdfHint').hidden = !on; $s('waPdfDl').hidden = !on || !!busy;
+    $s('waGo').classList.toggle('b-wa', !on); $s('waGo').classList.toggle('b-soft', on);          // no PDF possible: the text button becomes the main one
+  }
+  function prepPdf(inv, upload) {
+    pdfRes = null;
+    if (!window.Pdf || !window.html2canvas) { pdfUi(false); return; }
+    pdfUi(true, true);
+    Pdf.make(inv).then(function (r) {
+      if (cur !== inv) return;                               // the window was closed or reopened for another bill
+      pdfRes = r;
+      if (!upload) { pdfUi(true, false); return; }
+      state = 'pending'; rebuild();
+      return Store.savePdf(inv.kind === 'quote' ? 'quotes' : 'invoices', inv.id, r.blob).then(function (tk) {
+        if (cur !== inv) return;
+        token = tk; state = 'ready'; rebuild(); pdfUi(true, false);
+      }, function () {
+        if (cur !== inv) return;
+        state = 'failed'; $s('waLink').checked = false; rebuild(); pdfUi(true, false);
+      });
+    }, function () { if (cur === inv) { pdfUi(false); $s('waErr').textContent = t('wa_pdf_failed'); } });
+  }
+  /* send the bill as a PDF.  App button: the system share list gives the WhatsApp app (phone, or the Windows / Mac app) the PDF file itself;
+     where there is no share list the PDF is saved and WhatsApp opens on the chat.  Web button: the PDF is saved to Downloads and
+     WhatsApp Web opens on the chat (with the link that opens the PDF, on the real website). */
+  function sendPdf(web) {
+    if (!pdfRes) return;
+    var phone = normalize($s('waPhone').value);
+    if (phone === null) { $s('waErr').textContent = t('wa_bad_phone'); return; }
+    $s('waErr').textContent = '';
+    var text = $s('waMsg').value, sent = cur, r = pdfRes, linked = state === 'ready' && $s('waLink').checked;
+    var done = function () { if (mode === 'reminder' && window.Reminders) Reminders.markSent(sent); };
+    var openChat = function () {
+      var win = window.open((web ? webUrl : waUrl)(phone, text), '_blank');
+      if (!win) { $s('waErr').textContent = t('wa_popup'); return false; }
+      try { win.opener = null; } catch (e) { /* cross-origin: nothing to cut */ }
+      done(); return true;
+    };
+    // WhatsApp Web: no share list (it only offers apps that may not be installed).
+    // The PDF is saved to Downloads and WhatsApp Web opens on the chat; on the real website the message also carries the link that opens the PDF.
+    if (web) {
+      Pdf.download(r);
+      toast(t('wa_web_pdf_saved'));
+      openChat();
+      return;
+    }
+    Pdf.share(r, text).then(function (res) {
+      if (res === 'shared') { toast(t('wa_opened')); done(); return; }
+      if (res === 'cancel') return;
+      if (linked) { toast(t('wa_pdf_link_sent')); openChat(); return; }
+      Pdf.download(r); toast(t('wa_pdf_saved'));               // the share list is not available (demo / no connection): save it, he attaches it with the paperclip
+      setTimeout(openChat, 700);
+    });
   }
 
   function go(web) {
@@ -192,7 +246,9 @@
 
   function init() {
     $s('waGo').addEventListener('click', function () { go(false); });
-    $s('waWeb').addEventListener('click', function () { go(true); });
+    $s('waWeb').addEventListener('click', function () { if (pdfRes) sendPdf(true); else go(true); });
+    $s('waPdf').addEventListener('click', function () { sendPdf(false); });
+    $s('waPdfDl').addEventListener('click', function () { if (pdfRes) { Pdf.download(pdfRes); toast(t('pdf_saved', { name: pdfRes.name })); } });
     $s('waCopy').addEventListener('click', copy);
     $s('waLang').addEventListener('change', rebuild);
     $s('waLink').addEventListener('change', rebuild);

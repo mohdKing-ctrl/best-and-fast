@@ -12,8 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=09f30d9e">
-<link rel="stylesheet" href="css/invoice.css?v=6c3ca58b">
+<link rel="stylesheet" href="css/styles.css?v=46a7f95a">
+<link rel="stylesheet" href="css/invoice.css?v=751dd50c">
 <style id="pageStyle"></style>
 </head>
 <body>
@@ -163,7 +163,7 @@
           </div>
           </div>
 
-          <div class="fld" style="margin-top:12px"><label data-i18n="note"></label><input id="nvNote" data-i18n-ph="note_ph"></div>
+          <div class="fld" style="margin-top:12px"><label class="redlabel" data-i18n="note_red"></label><textarea id="nvNote" rows="2" maxlength="500" data-i18n-ph="note_red_ph"></textarea></div>
 
           <button class="btn b-main" id="nvSave" type="button">&#10004; <span id="nvSaveTxt" data-i18n="save_print"></span></button>
           <button class="btn b-wa" id="nvSaveWa" type="button"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span id="nvSaveWaTxt" data-i18n="save_whatsapp"></span></button>
@@ -206,6 +206,11 @@
   <!-- ============ PAYMENT REMINDERS ============ -->
   <div id="view-reminders" class="page">
     <div class="card" style="margin-bottom:18px"><p class="hint" style="margin:0" data-i18n="reminders_hint"></p></div>
+    <div class="card" id="rmMemoCard" style="margin-bottom:18px" hidden>
+      <div class="chead"><h3>&#128221; <span data-i18n="memo_title"></span> <span class="badge badge-red" id="rmMemoCount"></span></h3><button class="tbtn b-ok" id="rmMemoAdd" type="button">&#10133; <span data-i18n="memo_add"></span></button></div>
+      <p class="hint" style="margin:0 0 10px" data-i18n="memo_hint"></p>
+      <div id="rmMemoList"></div>
+    </div>
     <div class="stats" id="rmStats"></div>
     <div class="toolbar"><div class="pills" id="rmFilters" style="margin:0">
       <button type="button" data-f="all" class="active" data-i18n="rm_filter_all"></button><button type="button" data-f="due" data-i18n="rm_filter_due"></button>
@@ -344,7 +349,10 @@
         <div class="fld"><label data-i18n="st_quote_prefix"></label><input id="stQuotePrefix" dir="ltr" style="text-align:start" maxlength="8"></div>
         <div class="fld"><label data-i18n="st_quote_days"></label><input id="stQuoteDays" type="number" min="1" max="365" step="1"></div>
         <div class="fld"><label data-i18n="st_remind_days"></label><input id="stRemindDays" type="number" min="0" max="90" step="1"></div>
-        <div class="fld"><label data-i18n="st_paper"></label><select id="stPaper"><option value="a4" data-i18n="paper_a4"></option><option value="80" data-i18n="paper_80"></option></select></div>
+        <div class="fld"><label data-i18n="st_paper"></label><select id="stPaper"><option value="a4" data-i18n="paper_a4"></option><option value="a5" data-i18n="paper_a5"></option><option value="80" data-i18n="paper_80"></option><option value="58" data-i18n="paper_58"></option></select></div>
+        <div class="fld"><label data-i18n="st_print_scale"></label><input id="stPrintScale" type="number" min="50" max="150" step="5"></div>
+        <div class="fld"><label data-i18n="st_cr_name_ar"></label><input id="stCrNameAr" dir="rtl"></div>
+        <div class="fld"><label data-i18n="st_cr_name_en"></label><input id="stCrNameEn" dir="ltr" style="text-align:start"></div>
         <div class="fld"><label data-i18n="st_bank"></label><input id="stBank"></div>
         <div class="fld" style="grid-column:1/-1"><label data-i18n="st_footer"></label><input id="stFooter"></div>
         <div class="fld" style="grid-column:1/-1"><label data-i18n="st_terms"></label><input id="stTerms"></div>
@@ -412,6 +420,17 @@
   <button class="btn b-danger" id="rsRemove" type="button" style="margin-top:10px" data-i18n="remind_remove"></button>
 </div></div>
 
+<div class="modal" id="memoModal" hidden><div class="mbox">
+  <h3 id="mmHead"></h3><div class="msub" data-i18n="memo_sub"></div>
+  <div class="fld"><label data-i18n="memo_what"></label><input id="mmTitle" maxlength="120" autocomplete="off" data-i18n-ph="memo_what_ph"></div>
+  <div class="fields" style="margin-top:11px"><div class="fld"><label data-i18n="date"></label><input type="date" id="mmDate"></div><div class="fld"><label data-i18n="memo_time"></label><input type="time" id="mmTime"></div></div>
+  <div class="quick wrapq" id="mmQuick" style="margin-top:8px"><button type="button" data-d="0" data-i18n="rd_0"></button><button type="button" data-d="1" data-i18n="rd_1"></button><button type="button" data-d="2" data-i18n="rd_2"></button><button type="button" data-d="3" data-i18n="rd_3"></button><button type="button" data-d="7" data-i18n="rd_7"></button></div>
+  <div class="fld" style="margin-top:10px"><label data-i18n="memo_note"></label><input id="mmNote" maxlength="300" autocomplete="off"></div>
+  <div class="err" id="mmErr"></div>
+  <div class="duo"><button class="btn b-main" style="margin-top:0" id="mmSave" type="button" data-i18n="save"></button><button class="btn b-soft" type="button" data-close data-i18n="cancel"></button></div>
+  <button class="btn b-danger" id="mmDelete" type="button" style="margin-top:10px" data-i18n="delete"></button>
+</div></div>
+
 <div class="modal" id="waModal" hidden><div class="mbox">
   <h3 style="display:flex;align-items:center;gap:9px"><svg viewBox="0 0 24 24" width="26" height="26" style="fill:var(--wa)"><use href="#i-wa"/></svg> <span id="waTitleTxt" data-i18n="wa_title"></span></h3>
   <div class="msub" id="waSub"></div>
@@ -424,11 +443,14 @@
   <div class="wa-status" id="waStatus"></div>
   <div class="fld" style="margin-top:6px"><label data-i18n="wa_message"></label><textarea id="waMsg"></textarea></div>
   <div class="err" id="waErr"></div>
+  <button class="btn b-wa" id="waPdf" type="button" style="margin-top:14px" hidden><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span id="waPdfTxt"></span></button>
+  <div class="mini" id="waPdfHint" style="margin-top:6px" hidden data-i18n="wa_pdf_hint"></div>
+  <button class="btn b-soft" id="waWeb" type="button" style="margin-top:8px"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span id="waWebTxt"></span></button>
   <div class="duo">
-    <button class="btn b-wa" id="waGo" type="button"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span data-i18n="wa_open"></span></button>
-    <button class="btn b-soft" id="waCopy" type="button" data-i18n="wa_copy"></button>
+    <button class="btn b-soft" id="waPdfDl" type="button" hidden>&#128196; <span data-i18n="pdf_download"></span></button>
+    <button class="btn b-soft" id="waGo" type="button"><svg viewBox="0 0 24 24"><use href="#i-wa"/></svg> <span data-i18n="wa_open"></span></button>
   </div>
-  <button class="btn b-soft" id="waWeb" type="button" style="margin-top:10px" data-i18n="wa_web"></button>
+  <button class="btn b-soft" id="waCopy" type="button" data-i18n="wa_copy" style="margin-top:8px"></button>
   <button class="btn b-soft" type="button" data-close style="margin-top:10px" data-i18n="close"></button>
 </div></div>
 
@@ -520,25 +542,28 @@
 <div class="toast" id="toast"></div>
 <div id="printArea"></div>
 
-<script src="js/i18n.js?v=10dcb6ee"></script>
+<script src="js/i18n.js?v=3308cee4"></script>
 <script src="js/core.js?v=93e0a461"></script>
-<script src="js/catalog.js?v=11f6d4bc"></script>
-<script src="js/demo.js?v=fa4815ef"></script>
+<script src="js/catalog.js?v=6826e382"></script>
+<script src="js/demo.js?v=be42d008"></script>
 <script src="js/xlsx.js?v=1d957b6d"></script>
-<script src="js/store.js?v=5d00ca65"></script>
-<script src="js/print.js?v=a7da2fc1"></script>
+<script src="js/store.js?v=2e8afc36"></script>
+<script src="js/print.js?v=efc86359"></script>
+<script src="js/vendor/html2canvas.min.js"></script>
+<script src="js/logo-data.js?v=16f74269"></script>
+<script src="js/pdf.js?v=5ceabbc3"></script>
 <script src="js/combo.js?v=9704f11b"></script>
-<script src="js/whatsapp.js?v=b7fd9d98"></script>
+<script src="js/whatsapp.js?v=fc2e89c7"></script>
 <script src="js/invoice.js?v=f401b447"></script>
-<script src="js/invoices.js?v=92e01bbe"></script>
-<script src="js/reminders.js?v=973b941d"></script>
-<script src="js/quotes.js?v=9d4d8c37"></script>
+<script src="js/invoices.js?v=c3446a7f"></script>
+<script src="js/reminders.js?v=d998d34c"></script>
+<script src="js/quotes.js?v=283ed9ff"></script>
 <script src="js/expenses.js?v=a6d74049"></script>
 <script src="js/customers.js?v=3a975e34"></script>
 <script src="js/services.js?v=b9920e4e"></script>
 <script src="js/reports.js?v=c3f2ebbf"></script>
 <script src="js/subscription.js?v=ca9f4c8f"></script>
-<script src="js/settings.js?v=34bf8048"></script>
+<script src="js/settings.js?v=fd07ed7f"></script>
 <script src="js/app.js?v=de4f8489"></script>
 <script src="js/demo-mode.js?v=839eff9b"></script>
 </body>

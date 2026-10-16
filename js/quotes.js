@@ -60,6 +60,7 @@
         '<td data-l="' + esc(t('valid_until')) + '">' + (x.validUntil ? fdate(x.validUntil) : '-') + '</td>' +
         '<td data-l="' + esc(t('status')) + '">' + stateChip(x) + (x.convertedTo ? '<div class="mini">&rarr; <span class="ltr">' + esc(x.convertedTo) + '</span></div>' : '') + '</td>' +
         '<td data-l=""><div class="acts"><button class="iconbtn wa" data-wa="' + esc(x.id) + '" title="' + esc(t('send_whatsapp')) + '">' + WA + '</button>' +
+          '<button class="iconbtn pdf" data-pdf="' + esc(x.id) + '" title="' + esc(t('send_pdf')) + '">PDF</button>' +
           '<button class="iconbtn" data-print="' + esc(x.id) + '" title="' + esc(t('print')) + '">&#128424;</button></div></td></tr>';
     }).join('');
   }
@@ -84,7 +85,7 @@
         kv('plate_no', q.plate ? '<span class="ltr">' + esc(q.plate) + '</span>' : '') + kv('car', esc(q.car)) + kv('color', esc(q.color)) +
         kv('mileage', q.km ? '<span class="ltr">' + esc(q.km) + '</span>' : '') + kv('vin', q.vin ? '<span class="ltr">' + esc(q.vin) + '</span>' : '') +
         kv('claim', q.claim ? '<span class="ltr">' + esc(q.claim) + '</span>' : '') +
-        kv('valid_until', q.validUntil ? fdate(q.validUntil) : '') + kv('fault', esc(q.fault)) + kv('note', esc(q.note)) +
+        kv('valid_until', q.validUntil ? fdate(q.validUntil) : '') + kv('fault', esc(q.fault)) + kv('note', q.note ? '<span class="rednote">' + esc(q.note) + '</span>' : '') +
         kv('converted_to', q.convertedTo ? '<span class="ltr">' + esc(q.convertedTo) + '</span>' : '') +
       '</div>' +
       '<div class="tblcard" style="box-shadow:none"><div class="tblwrap"><table><thead><tr><th>' + esc(t('service')) + '</th><th>' + esc(t('unit')) + '</th><th>' + esc(t('qty')) + '</th><th>' + esc(t('price')) + '</th><th>' + esc(t('amount')) + '</th></tr></thead><tbody>' + items + '</tbody></table></div></div>' +
@@ -100,6 +101,7 @@
       (canConvert ? '<button type="button" class="btn b-ok" style="margin-top:14px" id="qtConvert">&#129534; ' + esc(t('convert_to_invoice')) + '</button>' : '') +
       '<div class="duo" style="margin-top:12px"><button type="button" class="btn b-wa" style="margin-top:0" id="qtWa">' + WA + ' ' + esc(t('send_whatsapp')) + '</button>' +
         '<button type="button" class="btn b-main" style="margin-top:0" id="qtPrint">&#128424; ' + esc(t('print')) + '</button></div>' +
+      '<button type="button" class="btn b-soft" style="margin-top:10px" id="qtPdf">&#128196; ' + esc(t('pdf_download')) + '</button>' +
       '<button type="button" class="btn b-soft" style="margin-top:10px" data-close>' + esc(t('close')) + '</button>' +
       (admin ? '<button type="button" class="btn b-danger" style="margin-top:10px" id="qtDelete">' + esc(t('delete_quote')) + '</button>' : '');
     App.openModal('qtModal');
@@ -137,8 +139,8 @@
     $('qtReset').addEventListener('click', function () { $('qtSearch').value = ''; $('qtStatus').value = ''; render(); });
     $('qtNew').addEventListener('click', function () { App.show('new'); NewInvoice.startQuote(); });
     $('qtBody').addEventListener('click', function (e) {
-      var wa = e.target.closest('[data-wa]');
-      if (wa) { Whatsapp.open(Store.quoteById(wa.dataset.wa)); return; }
+      var wa = e.target.closest('[data-wa], [data-pdf]');
+      if (wa) { Whatsapp.open(Store.quoteById(wa.dataset.wa || wa.dataset.pdf)); return; }
       var p = e.target.closest('[data-print]');
       if (p) { Print.invoice(Store.quoteById(p.dataset.print)); return; }
       var r = e.target.closest('tr[data-id]'); if (r) openDetail(r.dataset.id);
@@ -148,6 +150,7 @@
       else if (e.target.closest('#qtPrint')) Print.invoice(Store.quoteById(openId));
       else if (e.target.closest('#qtWa')) Whatsapp.open(Store.quoteById(openId));
       else if (e.target.closest('#qtDelete')) remove();
+      else if (e.target.closest('#qtPdf')) Pdf.downloadFor(Store.quoteById(openId), e.target.closest('#qtPdf'));
     });
     $('qtBox').addEventListener('change', function (e) { if (e.target.id === 'qtStatusSel') setStatus(e.target.value); });
   }

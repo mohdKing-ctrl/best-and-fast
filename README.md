@@ -11,6 +11,7 @@ and used spare parts. Arabic (default) and English, light and dark mode, phone a
 - **Quotations (عروض الأسعار)** for customers, cars imported from America and insurance companies: own numbers (QT-00001...), a *valid until* date, insurance claim no., status (open / accepted / rejected / expired), and **turn an accepted quotation into a bill** with one button.
 - **Payment reminders (تذكيرات الدفع)**: when a customer pays later, choose the day to remind him (after 2, 3 days ...). On that day a pop-up shows his name and what he owes, with a button that opens WhatsApp with a polite reminder already written.
 - **Expenses (المصروفات)** per section (accident repair, painting, mechanical, used parts, other + General), and the *Reports* page shows income, expenses and net for every section.
+- **Send the bill as an A4 PDF** (the **PDF** button beside every bill, or the green button of the WhatsApp window; the demo saves the PDF and opens WhatsApp on the chat), invoice **notes printed in red**, **personal reminders** (your own notes with a day and time), print sizes **A4 / A5 / 80 mm / 58 mm** with a scale, and the **name in the commercial register**.
 - Move a car through the stages: Received -> In repair -> Ready for pickup -> Delivered.
 - Print the bilingual A4 invoice or an 80 mm receipt (Settings).
 - **Send the bill on WhatsApp** (opens WhatsApp with the message ready - type any number to test).

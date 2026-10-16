@@ -127,7 +127,18 @@
     var expenses = xs.map(function (x, i) {
       return { id: 'demo-e' + (i + 1), date: day(-x[4]), section: x[0], type: x[1], desc: x[2], amount: x[3], method: x[5], note: '', createdBy: userName || '', demo: true };
     });
-    return { customers: customers, invoices: invoices, quotes: quotes, expenses: expenses, counter: invoices.length, qcounter: quotes.length };
+
+    /* ---- personal reminders: one due now, some coming, one already done ---- */
+    var ms = [
+      ['الاتصال بمورد الدهان لطلب الدفعة الجديدة', 'اسأل عن سعر الدهان الأبيض واللون الأحمر', 0, '', false],
+      ['تجديد رخصة البلدية', 'أحضر السجل التجاري وصورة الرخصة القديمة', 5, '', false],
+      ['شراء مواد التلميع', '', 1, '09:00', false],
+      ['دفع إيجار الورشة', '', -3, '', true]
+    ];
+    var memos = ms.map(function (m, i) {
+      return { id: 'demo-m' + (i + 1), title: m[0], note: m[1], date: day(m[2]), time: m[3], done: m[4], doneAt: m[4] ? day(m[2]) : '', demo: true };
+    });
+    return { customers: customers, invoices: invoices, quotes: quotes, expenses: expenses, memos: memos, counter: invoices.length, qcounter: quotes.length };
   }
 
   window.Demo = { build: build };

@@ -97,6 +97,7 @@
         '<td data-l="' + esc(t('payment')) + '">' + payChip(i) + remindMini(i) + '</td>' +
         '<td data-l="' + esc(t('job_status')) + '">' + (i.void || i.kind === 'parts' ? '' : jobChip(i, Store.canWrite())) + '</td>' +
         '<td data-l=""><div class="acts"><button class="iconbtn wa" data-wa="' + esc(i.id) + '" title="' + esc(t('send_whatsapp')) + '">' + WA + '</button>' +
+          '<button class="iconbtn pdf" data-pdf="' + esc(i.id) + '" title="' + esc(t('send_pdf')) + '">PDF</button>' +
           '<button class="iconbtn" data-print="' + esc(i.id) + '" title="' + esc(t('print')) + '">&#128424;</button></div></td></tr>';
     }).join('');
   }
@@ -165,7 +166,7 @@
         kv('bill_type', esc(I18N.pick(kind.en, kind.ar))) +
         (repair ? kv('plate_no', inv.plate ? '<span class="ltr">' + esc(inv.plate) + '</span>' : '') + kv('car', esc(inv.car)) + kv('color', esc(inv.color)) +
           kv('mileage', inv.km ? '<span class="ltr">' + esc(inv.km) + '</span>' : '') + kv('vin', inv.vin ? '<span class="ltr">' + esc(inv.vin) + '</span>' : '') + kv('claim', inv.claim ? '<span class="ltr">' + esc(inv.claim) + '</span>' : '') + kv('due_date', inv.due ? fdate(inv.due) : '') + kv('fault', esc(inv.fault)) : '') +
-        kv('note', esc(inv.note)) +
+        kv('note', inv.note ? '<span class="rednote">' + esc(inv.note) + '</span>' : '') +
       '</div>' +
       '<div class="tblcard" style="box-shadow:none"><div class="tblwrap"><table><thead><tr><th>' + esc(t('service')) + '</th><th>' + esc(t('unit')) + '</th><th>' + esc(t('qty')) + '</th><th>' + esc(t('price')) + '</th><th>' + esc(t('amount')) + '</th></tr></thead><tbody>' + items + '</tbody></table></div></div>' +
       '<div class="sums" style="margin-top:14px">' +
@@ -188,8 +189,9 @@
       '<div class="err" id="ivErr"></div>' +
       (canWrite && !inv.void && repair ? '<div class="fields" style="margin-top:6px;align-items:end"><div class="fld"><label>' + esc(t('job_status')) + '</label><select id="ivJobSel">' +
         JOB_ORDER.map(function (j) { return '<option value="' + j + '"' + (j === inv.job ? ' selected' : '') + '>' + esc(t('job_' + j)) + '</option>'; }).join('') + '</select></div></div>' : '') +
-      '<div class="duo" style="margin-top:16px"><button type="button" class="btn b-wa" style="margin-top:0" id="ivWa">' + WA + ' ' + esc(t('send_whatsapp')) + '</button>' +
+      '<div class="duo" style="margin-top:16px"><button type="button" class="btn b-wa" style="margin-top:0" id="ivWa">' + WA + ' ' + esc(t('send_pdf_wa')) + '</button>' +
         '<button type="button" class="btn b-main" style="margin-top:0" id="ivPrint">&#128424; ' + esc(t('print')) + '</button></div>' +
+      '<button type="button" class="btn b-soft" style="margin-top:10px" id="ivPdf">&#128196; ' + esc(t('pdf_download')) + '</button>' +
       '<button type="button" class="btn b-soft" style="margin-top:10px" data-close>' + esc(t('close')) + '</button>' +
       (admin && !inv.void ? '<button type="button" class="btn b-danger" style="margin-top:10px" id="ivVoid">' + esc(t('void_invoice')) + '</button>' : '');
     App.openModal('ivModal');
@@ -274,8 +276,8 @@
     $('ivDoDelete').addEventListener('click', deleteSelected);
     $('ivSelAll').addEventListener('change', function (e) { selectAll(e.target.checked); });
     $('ivBody').addEventListener('click', function (e) {
-      var wa = e.target.closest('[data-wa]');
-      if (wa) { Whatsapp.open(Store.invoiceById(wa.dataset.wa)); return; }
+      var wa = e.target.closest('[data-wa], [data-pdf]');
+      if (wa) { Whatsapp.open(Store.invoiceById(wa.dataset.wa || wa.dataset.pdf)); return; }       // the window sends the bill as an A4 PDF
       if (selecting) {                                  // in delete mode a click only ticks / unticks
         if (e.target.closest('[data-print]')) { Print.invoice(Store.invoiceById(e.target.closest('[data-print]').dataset.print)); return; }
         var row = e.target.closest('tr[data-id]'); if (row) toggleSel(row.dataset.id);
@@ -292,6 +294,7 @@
       else if (e.target.closest('#ivPrint')) Print.invoice(Store.invoiceById(openId));
       else if (e.target.closest('#ivWa')) Whatsapp.open(Store.invoiceById(openId));
       else if (e.target.closest('#ivRemind')) Reminders.openSet(openId);
+      else if (e.target.closest('#ivPdf')) Pdf.downloadFor(Store.invoiceById(openId), e.target.closest('#ivPdf'));
       else if (e.target.closest('#ivVoid')) voidInvoice();
     });
     $('ivBox').addEventListener('change', function (e) { if (e.target.id === 'ivJobSel') setJob(openId, e.target.value); });

@@ -74,7 +74,7 @@
       addrAr: 'ولاية سمائل - الصناعية هصاص - سلطنة عمان',
       phone: '97230444', email: 'en.abujihad@gmail.com',
       cr: '1368308', vatNo: '', vatOn: false, vatPct: 5,
-      prefix: 'INV', quotePrefix: 'QT', quoteDays: 14, remindDays: 3, paper: 'a4',
+      prefix: 'INV', quotePrefix: 'QT', quoteDays: 14, remindDays: 3, crNameAr: '', crNameEn: '', printScale: 100, paper: 'a4',
       lang: 'ar', theme: 'light',
       footer: 'Thank you for your business  |  شكراً لتعاملكم معنا',
       customCats: [], customUnits: [],
